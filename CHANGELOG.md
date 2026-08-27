@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — Phase 12: Reports
+
+- Mostly an aggregation phase, not new detection: `domain/models/report.py`
+  (`Report`, `ManagedToolSummary`) assembles what already exists —
+  `SystemContext` (Phase 2), diagnostics (Phase 9, whose `recommendation`
+  field directly populates the report's Recommendations section — no
+  separate recommendation engine invented), `StateStore` (Phase 7), and
+  `HistoryStore` (Phase 7/11).
+- `application/report_generator.py`: `build_report`. "Never include
+  secrets" (spec §55) holds structurally, not via an extra redaction pass
+  — every source it draws from is already secret-safe by construction
+  from earlier phases.
+- Real bug caught before it shipped (unit test, not smoke test): the
+  first version called both `run_doctor()` and `build_diagnostic_context()`
+  separately to get the diagnostics and the underlying `SystemContext`,
+  which would have silently run *every* detection I/O call twice
+  (detection, package-lock check, `dpkg --audit`, dev-tool verification,
+  DNS probe) on every `hallfix report`. Fixed by building the context
+  once and running `DiagnosticEngine` directly; verified with a
+  regression test asserting each stubbed command is called exactly once.
+- `cli/report_rendering.py`: `render_txt`/`render_html` — JSON needs no
+  dedicated renderer (`dataclasses.asdict` + `json.dumps`, the same
+  pattern every other `--json` command already uses). HTML escapes all
+  content (verified against a deliberately hostile description
+  containing `<script>`).
+- `hallfix report [--format txt|json|html] [--output <path>]` — entirely
+  read-only. The global `--json` flag is also honored as `--format json`,
+  for consistency with every other command.
+
 ## Unreleased — Phase 11: Backup & Rollback
 
 - Scope check against our actual `Action` types: only `InstallPackageAction`

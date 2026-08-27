@@ -142,5 +142,14 @@ detail to reconstruct that undo. `infrastructure/filesystem/backup.py`
 (`BackupManager`) is real, tested, standalone infrastructure with no
 caller yet — there's no `WRITE_FILE`/`MODIFY_FILE` action for it to serve.
 
+## Phase 12 status
+
+Implemented: `domain/models/report.py` (`Report`), `application/
+report_generator.py` (`build_report` — aggregates `SystemContext`,
+diagnostics, `StateStore`, `HistoryStore`; no new detection logic),
+`cli/report_rendering.py` (TXT/HTML; JSON reuses the standard
+`dataclasses.asdict` pattern), and `hallfix report
+[--format txt|json|html] [--output path]`.
+
 Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
-(needs "is this profile currently installed" tracking), reports.
+(needs "is this profile currently installed" tracking).
