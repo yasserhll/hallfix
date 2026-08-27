@@ -113,6 +113,15 @@ Implemented: `domain/registries/profile_registry.py` (`ProfileRegistry`),
 `hallfix profile list/show/diff/install` — `install custom --tools ...`
 goes through the identical execution path as a registry-defined profile.
 
+## Phase 9 status
+
+Implemented: `domain/diagnostics/` (pure check functions,
+`DiagnosticEngine`/`DiagnosticRegistry`, deterministic `aggregate_health`),
+`application/doctor.py` (the I/O assembly step — package manager lock,
+dev-tool verification, DNS probe), and `detectors/dns_resolution.py` (a
+second, DNS-specific connectivity probe distinct from Phase 2's raw-IP
+check). `hallfix doctor`, `hallfix network info/doctor` — all read-only.
+
 Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
-(needs "is this profile currently installed" tracking), diagnostics,
-fixes, backup/rollback, reports.
+(needs "is this profile currently installed" tracking), fixes,
+backup/rollback, reports.

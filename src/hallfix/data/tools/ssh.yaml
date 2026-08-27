@@ -1,0 +1,27 @@
+id: ssh
+name: OpenSSH Client
+description: Secure shell client for remote access.
+category: essentials
+profiles: [developer, devops, system-administrator, network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: openssh-client
+  DNF: openssh-clients
+  PACMAN: openssh
+  ZYPPER: openssh
+
+verification:
+  executable: ssh
+  version_command: [ssh, -V]
+  version_regex: 'OpenSSH_(\d+\.\d+)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: https://www.openssh.com/manual.html

@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased — Phase 9: Doctor
+
+- `domain/models/diagnostic.py`: `DiagnosticResult` — stable dotted `id`
+  (`"system.disk"`, `"network.dns_resolution"`), never a sequential
+  number, so it stays meaningful as checks change and can be safely
+  referenced by a future `fix_id`. `fix_available`/`fix_id` are always
+  `False`/`None` — there is no FixRegistry yet (Phase 10).
+- `domain/diagnostics/`: ~19 pure check functions across system/network/
+  package/development categories, all operating on an already-assembled
+  `DiagnosticContext` (zero I/O in the check functions themselves).
+  `DiagnosticEngine`/`DiagnosticRegistry` run them; `aggregate_health` is
+  a small, documented, deterministic rule (CRITICAL > ERROR > WARNING >
+  else HEALTHY) — categorical, not a numeric score, per spec §40.
+- `detectors/dns_resolution.py`: a *second* connectivity probe, distinct
+  from Phase 2's `check_internet_connectivity` (which deliberately
+  connects to a raw IP, bypassing DNS). Together they let a diagnostic
+  distinguish spec §18's exact example: raw connectivity fine, DNS
+  resolution failing — verified directly
+  (`test_the_spec_example_scenario_dns_failure_with_raw_connectivity`).
+- `application/doctor.py`: `build_diagnostic_context`/`run_doctor` — the
+  only place the extra I/O (package manager lock check, git/docker/ssh
+  verification, the DNS probe gated on raw connectivity already being up)
+  gets gathered before handing off to the pure engine.
+- Git/Docker/SSH absence is always INFO, never WARNING/ERROR — spec §40:
+  "Do not penalize a machine because optional software is absent,"
+  verified directly (`test_doctor_never_penalizes_absent_optional_tools`).
+- Added an `ssh` tool definition (needed for the SSH dev-environment check).
+- `hallfix doctor [--json]`, `hallfix network info`, `hallfix network
+  doctor [--json]` — all read-only.
+- Real bug caught in CLI smoke testing (not unit tests): `check_disk`
+  picked up squashfs mounts (snap packages — fixed-size, always ~100%
+  "used" by design) when computing worst-case usage, which reported this
+  actual development machine as CRITICAL. Same root cause as the Phase 2
+  `system info` display bug, this time in diagnostic logic that drives
+  the exit code, not just a rendering filter — fixed with a regression
+  test (`test_check_disk_ignores_squashfs_always_full_by_design`).
+
 ## Unreleased — Phase 8: Profiles
 
 - `domain/models/profile.py` + `domain/registries/profile_registry.py`:

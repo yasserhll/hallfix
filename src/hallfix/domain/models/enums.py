@@ -36,3 +36,12 @@ class SupportLevel(StrEnum):
     EXPERIMENTAL = "EXPERIMENTAL"
     DETECTED_ONLY = "DETECTED_ONLY"
     UNSUPPORTED = "UNSUPPORTED"
+
+
+class HealthState(StrEnum):
+    """Overall system health (spec §40) — categorical, not a numeric score."""
+
+    HEALTHY = "HEALTHY"
+    DEGRADED = "DEGRADED"
+    UNHEALTHY = "UNHEALTHY"
+    CRITICAL = "CRITICAL"

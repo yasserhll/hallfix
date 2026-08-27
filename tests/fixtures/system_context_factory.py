@@ -27,6 +27,13 @@ def make_system_context(
     manager_kind: PackageManagerKind,
     family: DistributionFamily,
     architecture: str = "x86_64",
+    environment: EnvironmentInfo | None = None,
+    capabilities: CapabilitySet | None = None,
+    cpu: CpuInfo | None = None,
+    memory: MemoryInfo | None = None,
+    disk: DiskInfo | None = None,
+    network: NetworkInfo | None = None,
+    sudo: SudoInfo | None = None,
 ) -> SystemContext:
     return SystemContext(  # noqa: S604 - `shell` is our own dataclass field, not subprocess
         hostname="test",
@@ -43,8 +50,9 @@ def make_system_context(
             pretty_name=None,
             family=family,
         ),
-        environment=EnvironmentInfo(kind=VirtualizationKind.BARE_METAL),
-        capabilities=CapabilitySet(
+        environment=environment or EnvironmentInfo(kind=VirtualizationKind.BARE_METAL),
+        capabilities=capabilities
+        or CapabilitySet(
             package_management=True,
             systemd=True,
             sudo=True,
@@ -60,10 +68,11 @@ def make_system_context(
             ipv4=True,
             ipv6=False,
         ),
-        cpu=CpuInfo(model="Test CPU", architecture=architecture, cores=4, threads=8),
-        memory=MemoryInfo(total_bytes=0, available_bytes=0, swap_total_bytes=0, swap_free_bytes=0),
-        disk=DiskInfo(),
-        network=NetworkInfo(),
+        cpu=cpu or CpuInfo(model="Test CPU", architecture=architecture, cores=4, threads=8),
+        memory=memory
+        or MemoryInfo(total_bytes=0, available_bytes=0, swap_total_bytes=0, swap_free_bytes=0),
+        disk=disk or DiskInfo(),
+        network=network or NetworkInfo(),
         package_manager=PackageManagerInfo(kind=manager_kind, executable_path=None),
-        sudo=SudoInfo(available=True, running_as_root=False),
+        sudo=sudo or SudoInfo(available=True, running_as_root=False),
     )
