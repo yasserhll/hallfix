@@ -134,3 +134,33 @@ def build_command_runner(*, dry_run: bool) -> CommandRunner:
     if dry_run:
         return DryRunCommandRunner()
     return SubprocessCommandRunner()
+
+
+class PrivilegedCommandRunner:
+    """Wraps another ``CommandRunner``, prefixing ``sudo`` onto commands that
+    declare ``requires_root=True`` (spec §48).
+
+    This is the *only* place Hallfix decides to elevate privileges, and it
+    elevates per-command, never the whole process — Hallfix itself keeps
+    running as the invoking user. If the process is already root, nothing
+    is added. Deliberately does not pass a password anywhere: `sudo`'s own
+    prompt (talking to the controlling terminal directly, not stdin) is
+    what authenticates, exactly as it would for a user typing the command
+    by hand.
+    """
+
+    def __init__(self, *, inner: CommandRunner, running_as_root: bool) -> None:
+        self._inner = inner
+        self._running_as_root = running_as_root
+
+    def run(self, spec: CommandSpec) -> CommandResult:
+        if spec.requires_root and not self._running_as_root:
+            spec = CommandSpec(
+                argv=("sudo", *spec.argv),
+                timeout_seconds=spec.timeout_seconds,
+                env=spec.env,
+                cwd=spec.cwd,
+                requires_root=spec.requires_root,
+                redact_argv_indices=tuple(i + 1 for i in spec.redact_argv_indices),
+            )
+        return self._inner.run(spec)

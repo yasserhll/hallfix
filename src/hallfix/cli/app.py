@@ -13,6 +13,7 @@ import typer
 from rich.console import Console
 
 from hallfix import __version__
+from hallfix.cli.commands import history as history_commands
 from hallfix.cli.commands import plan as plan_commands
 from hallfix.cli.commands import system as system_commands
 from hallfix.cli.commands import tool as tool_commands
@@ -29,6 +30,7 @@ app = typer.Typer(
 app.add_typer(system_commands.app, name="system")
 app.add_typer(tool_commands.app, name="tool")
 app.add_typer(plan_commands.app, name="plan")
+app.add_typer(history_commands.app, name="history")
 
 
 @app.callback()

@@ -82,6 +82,27 @@ queries — the strict "CLI only calls application/" rule stated in Phase 1
 is aspirational for orchestration-heavy work (like the Planner) but isn't
 worth the indirection for a plain lookup-and-render command.
 
-Not yet implemented (later phases, see `CHANGELOG.md`): profile registry,
-the executor, `StateStore`/`HistoryStore`, diagnostics, fixes,
-backup/rollback, reports.
+## Phase 6 status
+
+Implemented: `application/executor.py` (`Executor`, applying a plan
+action-by-action with failure isolation and post-install verification),
+`infrastructure/commands/runner.py`'s `PrivilegedCommandRunner` (the
+per-command `sudo` escalation deferred since Phase 3), and
+`cli/confirmation.py` (the concrete decision behind the `ConfirmationPrompt`
+protocol). `hallfix tool install/remove` is the first system-modifying
+command tree in Hallfix, and it cannot skip Planner/SafetyPolicy/Executor
+to get there.
+
+## Phase 7 status
+
+Implemented: `infrastructure/state/store.py` (`StateStore`, atomic
+single-snapshot JSON, ownership tracking) and
+`infrastructure/state/history_store.py` (`HistoryStore`, append-only
+JSONL, redacted, crash-tolerant on read). `Executor` records ownership
+after real installs/removes only; `hallfix tool info` surfaces it,
+`hallfix tool install/remove` write to history, `hallfix history[/show]`
+reads it back.
+
+Not yet implemented (later phases, see `CHANGELOG.md`): profile registry
+(where `installed_for`/shared-dependency tracking becomes load-bearing),
+diagnostics, fixes, backup/rollback, reports.

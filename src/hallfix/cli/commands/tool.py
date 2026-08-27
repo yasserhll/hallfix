@@ -1,33 +1,45 @@
-"""``hallfix tool`` command group — read-only for now.
+"""``hallfix tool`` command group.
 
-``install``/``remove`` aren't here yet: they require Planner + SafetyPolicy
-+ Executor (Phase 5/6), and Hallfix never bypasses the Planner for
-convenience (spec §84). This group only reads the registry, resolves
-compatibility, and verifies what's already on the system.
+``list``/``search``/``info`` are read-only. ``install``/``remove`` are the
+first commands in Hallfix that can actually modify the system — they go
+through Planner -> SafetyPolicy -> confirmation -> Executor and nothing
+else; Hallfix never bypasses that path for convenience (spec §84).
 """
 
 from __future__ import annotations
 
+import dataclasses
+import json
+from collections.abc import Callable
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
+from hallfix.application.executor import Executor
+from hallfix.application.planner import Planner
+from hallfix.cli.confirmation import resolve_confirmation
 from hallfix.detectors.system import SystemDetector
 from hallfix.detectors.tool_verifier import ToolVerifier
 from hallfix.domain.exceptions import RegistryError
+from hallfix.domain.models.history import ActionOutcome
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.models.tool import ToolDefinition
+from hallfix.domain.planning.execution_plan import ExecutionPlan
+from hallfix.domain.planning.execution_result import PlanExecutionResult
 from hallfix.domain.registries.compatibility import (
     assess_compatibility,
     resolve_installation_strategy,
 )
 from hallfix.domain.registries.tool_registry import ToolRegistry
-from hallfix.infrastructure.commands.runner import SubprocessCommandRunner
+from hallfix.domain.safety.policy import SafetyPolicy
+from hallfix.infrastructure.commands.runner import PrivilegedCommandRunner, SubprocessCommandRunner
 from hallfix.infrastructure.registries.tool_registry_loader import load_tool_registry
+from hallfix.infrastructure.state.history_store import HistoryStore
+from hallfix.infrastructure.state.store import StateStore
 
-app = typer.Typer(name="tool", help="Browse and inspect available tools.")
+app = typer.Typer(name="tool", help="Browse, install, and remove tools.")
 
 
 def _load_registry() -> ToolRegistry:
@@ -106,6 +118,14 @@ def _print_tool_info(console: Console, tool: ToolDefinition, ctx: SystemContext)
     else:
         console.print("Currently installed: no")
 
+    tool_state = StateStore().get_tool_state(tool.id)
+    if tool_state is None:
+        console.print("Managed by Hallfix: unknown (not yet observed by Hallfix)")
+    elif tool_state.installed_by_hallfix:
+        console.print("Managed by Hallfix: yes (Hallfix installed this)")
+    else:
+        console.print("Managed by Hallfix: no (was already present before Hallfix)")
+
 
 @app.command("info")
 def info(tool_id: str) -> None:
@@ -117,3 +137,150 @@ def info(tool_id: str) -> None:
         raise typer.Exit(code=1)
 
     _print_tool_info(Console(), tool, _detect_system())
+
+
+def _render_plan_human(console: Console, plan: ExecutionPlan) -> None:
+    console.print("[bold]HALLFIX EXECUTION PLAN[/bold]\n")
+    console.print(f"Plan: {plan.id}")
+    console.print(plan.description)
+    if plan.is_noop:
+        console.print("\nNo actions required. No changes were made.")
+        return
+    console.print("\nActions:\n")
+    for planned in plan.planned_actions:
+        console.print(f"[{planned.risk.risk_level.value}] {planned.description}")
+    console.print(f"\nRequires administrator privileges: {'YES' if plan.requires_root else 'NO'}")
+    console.print(f"Requires Internet: {'YES' if plan.requires_network else 'NO'}")
+    console.print(f"Reversible: {'YES' if plan.reversible else 'NO'}")
+    console.print("\nNo changes were made.")
+
+
+def _render_execution_result(console: Console, result: PlanExecutionResult) -> None:
+    for action_result in result.action_results:
+        marker = "✓" if action_result.succeeded else "✗"
+        console.print(
+            f"{marker} {action_result.message.strip() or action_result.action.type.value}"
+        )
+        if action_result.verification is not None:
+            v = action_result.verification
+            if v.executable_found:
+                console.print(f"  ✓ Executable found (version {v.installed_version or 'unknown'})")
+            else:
+                console.print("  ✗ Executable not found after installation")
+
+    console.print(f"\nSuccessful: {result.succeeded_count}  Failed: {result.failed_count}")
+    if not result.fully_succeeded:
+        console.print("Completed with warnings.")
+
+
+_PlanBuilder = Callable[[Planner, ToolDefinition, SystemContext], ExecutionPlan]
+
+
+def _run_mutation(
+    ctx: typer.Context,
+    tool_id: str,
+    *,
+    command_label: str,
+    build_plan: _PlanBuilder,
+) -> None:
+    cli_ctx = ctx.obj
+    registry = _load_registry()
+    tool = registry.get(tool_id)
+    if tool is None:
+        typer.secho(f"No such tool: {tool_id!r}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    system_context = _detect_system()
+    planner = Planner(command_runner=SubprocessCommandRunner())
+    plan = build_plan(planner, tool, system_context)
+
+    console = Console(no_color=cli_ctx.no_color if cli_ctx else False)
+    history = HistoryStore()
+
+    if plan.is_noop:
+        console.print(plan.description)
+        console.print("No changes were made.")
+        history.append(
+            command=command_label,
+            plan_id=plan.id,
+            plan_description=plan.description,
+            dry_run=False,
+            plan_reversible=plan.reversible,
+        )
+        return
+
+    dry_run = bool(cli_ctx and cli_ctx.dry_run)
+    if dry_run:
+        _render_plan_human(console, plan)
+        history.append(
+            command=command_label,
+            plan_id=plan.id,
+            plan_description=plan.description,
+            dry_run=True,
+            plan_reversible=plan.reversible,
+        )
+        return
+
+    decision = SafetyPolicy().evaluate_plan(plan)
+    outcome = resolve_confirmation(
+        plan, decision, yes=bool(cli_ctx and cli_ctx.yes), console=console
+    )
+    if not outcome.proceed:
+        typer.secho(outcome.reason or "Aborted.", fg=typer.colors.YELLOW, err=True)
+        raise typer.Exit(code=1)
+
+    running_as_root = system_context.sudo.running_as_root
+    command_runner = PrivilegedCommandRunner(
+        inner=SubprocessCommandRunner(), running_as_root=running_as_root
+    )
+    executor = Executor(
+        command_runner=command_runner, tool_registry=registry, state_store=StateStore()
+    )
+    result = executor.execute_plan(plan, dry_run=False)
+
+    history.append(
+        command=command_label,
+        plan_id=plan.id,
+        plan_description=plan.description,
+        dry_run=False,
+        plan_reversible=plan.reversible,
+        action_outcomes=tuple(
+            ActionOutcome(
+                action_type=r.action.type.value,
+                succeeded=r.succeeded,
+                already_satisfied=r.already_satisfied,
+                message=r.message,
+            )
+            for r in result.action_results
+        ),
+    )
+
+    if cli_ctx is not None and cli_ctx.json_output:
+        typer.echo(json.dumps(dataclasses.asdict(result), default=str, indent=2))
+    else:
+        _render_execution_result(console, result)
+
+    if not result.fully_succeeded:
+        raise typer.Exit(code=1)
+
+
+@app.command("install")
+def install(ctx: typer.Context, tool_id: str) -> None:
+    """Install a tool: Planner -> SafetyPolicy -> confirmation -> Executor."""
+    _run_mutation(
+        ctx,
+        tool_id,
+        command_label=f"tool install {tool_id}",
+        build_plan=lambda planner, tool, sc: planner.plan_tool_install(tool, sc),
+    )
+
+
+@app.command("remove")
+def remove(ctx: typer.Context, tool_id: str) -> None:
+    """Remove a tool: Planner -> SafetyPolicy -> confirmation -> Executor."""
+    _run_mutation(
+        ctx,
+        tool_id,
+        command_label=f"tool remove {tool_id}",
+        build_plan=lambda planner, tool, sc: planner.plan_tool_remove(tool, sc),
+    )

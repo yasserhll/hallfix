@@ -1,5 +1,70 @@
 # Changelog
 
+## Unreleased — Phase 7: State & History
+
+- `infrastructure/state/store.py`: `StateStore` — a single JSON snapshot
+  under `~/.local/state/hallfix/state.json`, atomic on every save
+  (temp-file write + `Path.replace`, same filesystem guaranteed). A
+  corrupt/unreadable file is treated as "nothing recorded yet" rather than
+  crashing Hallfix (spec §2: fail gracefully). `record_already_present`
+  never overwrites an existing `installed_by_hallfix=True` fact — spec §8:
+  "never assume that an installed package was installed by Hallfix" cuts
+  both ways.
+- `infrastructure/state/history_store.py`: `HistoryStore` — append-only
+  JSON Lines (not one big JSON document): a single line write under
+  `PIPE_BUF` is atomic on POSIX, and a crash mid-write only corrupts the
+  last line, not the whole log (verified: `test_skips_corrupt_trailing_line`).
+  Operation ids are sequential `HF-NNN`. Command/message text is redacted
+  through the same redaction as structured logs before it ever touches
+  disk (spec §9: never store secrets).
+- `Executor` now takes an optional `state_store`; after a real (non-dry-run)
+  successful install/remove it records ownership. Dry-run never touches
+  the store — verified directly, not just inferred from the dry-run flag.
+- `hallfix tool info <id>` now reports "Managed by Hallfix: yes/no/unknown".
+  `hallfix tool install/remove` record every outcome (no-op, dry-run, or
+  real) to history; `hallfix plan ...` (pure exploration) deliberately
+  does not.
+- `hallfix history` / `hallfix history show <id>` — read-only.
+- `plan_reversible` is stored on each history record as descriptive
+  metadata only — it is **not** presented as "rollback available"
+  anywhere in the CLI, since there is no RollbackManager yet (Phase 11)
+  and spec §11 is explicit: never claim rollback is available when it
+  isn't.
+
+## Unreleased — Phase 6: Executor
+
+- `infrastructure/commands/runner.py`: `PrivilegedCommandRunner` — the
+  privilege-escalation decision deferred since Phase 3. Wraps another
+  `CommandRunner`, prepends `sudo` only to commands declaring
+  `requires_root=True`, only when not already root. Never handles a
+  password itself — `sudo`'s own prompt talks to the controlling terminal
+  directly, same as if the user typed the command by hand. Elevates
+  per-command, never the whole process (spec §48).
+- `domain/planning/execution_result.py`: `ActionExecutionResult` /
+  `PlanExecutionResult` — per-action outcomes, so one action failing in a
+  multi-action plan doesn't collapse the result into an undifferentiated
+  failure (spec §50 failure isolation, exercised by
+  `test_failure_isolation_across_multiple_actions`).
+- `application/executor.py`: `Executor` — applies a plan action by action;
+  real exceptions are allowed to propagate rather than being caught and
+  turned into a plausible-looking failure result (spec §78: no silent
+  exception swallowing). Runs `ToolVerifier` after a successful, real
+  install — a package transaction succeeding is not the same as the tool
+  working (spec §26).
+- `cli/confirmation.py`: `resolve_confirmation` — the concrete decision
+  logic behind the `ConfirmationPrompt` protocol added in Phase 5.
+  `--yes` bypasses confirmation for LOW/MEDIUM risk only; HIGH/CRITICAL
+  always requires an interactive prompt, enforced via
+  `SafetyPolicy.allows_auto_confirm`, not re-derived here.
+- `hallfix tool install/remove <id>` — the first commands in Hallfix that
+  can modify the system. Full path: Planner -> (no-op short-circuit for
+  idempotence) -> SafetyPolicy -> confirmation -> Executor -> verification.
+  `--dry-run` shows the plan and stops before any confirmation logic runs.
+- Real, mutating install/remove is deliberately never exercised by the
+  automated test suite (would modify whatever machine runs the tests) —
+  covered by `Executor` unit tests against `FakeCommandRunner` instead;
+  CLI integration tests only touch the no-op and `--dry-run` paths.
+
 ## Unreleased — Phase 5: Planning Engine
 
 - `domain/planning/action.py`: `ActionType` + typed action dataclasses
