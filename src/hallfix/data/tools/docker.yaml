@@ -1,0 +1,32 @@
+# Native package names, not Docker's own upstream repo — simpler and
+# sufficient for MVP; using Docker's official apt/dnf repo (higher-trust
+# per spec §24) is future work once ADD_REPOSITORY/IMPORT_SIGNING_KEY
+# actions exist (Phase 5+). MEDIUM risk: installing this also brings in a
+# system service with real attack-surface/resource implications.
+id: docker
+name: Docker
+description: Container runtime.
+category: containers
+profiles: [developer, devops]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: docker.io
+  DNF: moby-engine
+  PACMAN: docker
+  ZYPPER: docker
+
+verification:
+  executable: docker
+  version_command: [docker, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: MEDIUM
+requires_root: true
+documentation_url: https://docs.docker.com/

@@ -1,0 +1,30 @@
+# No native package on any distro — a language-ecosystem-only tool (spec
+# §21/§23: secondary package sources). Distro family doesn't gate pip's
+# reliability the way it does native packages, so supported_distributions
+# is intentionally left empty: assess_compatibility() correctly reports
+# EXPERIMENTAL here rather than SUPPORTED (no per-distro claim made) or
+# DETECTED_ONLY (which would incorrectly imply a distro-specific gap).
+id: black
+name: Black
+description: Uncompromising Python code formatter.
+category: development
+profiles: [developer]
+dependencies: [python3]
+
+installation_strategies: [PIP]
+package_mappings:
+  PIP: black
+
+verification:
+  executable: black
+  version_command: [black, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: []
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: false
+documentation_url: https://black.readthedocs.io/

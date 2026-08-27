@@ -1,0 +1,31 @@
+# Only the Debian/apt path has been exercised against a real system so far
+# (see CHANGELOG Phase 3) — hence supported_distributions is DEBIAN-only for
+# now; dnf/pacman/zypper syntax is correct but not yet live-verified, so
+# Hallfix reports those as DETECTED_ONLY rather than SUPPORTED (spec §84).
+id: git
+name: Git
+description: Distributed version control system.
+category: essentials
+profiles: [developer, devops, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: git
+  DNF: git
+  PACMAN: git
+  ZYPPER: git
+
+verification:
+  executable: git
+  version_command: [git, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: false
+risk_level: LOW
+requires_root: true
+documentation_url: https://git-scm.com/doc

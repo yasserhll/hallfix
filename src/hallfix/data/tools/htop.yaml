@@ -1,0 +1,27 @@
+id: htop
+name: htop
+description: Interactive process viewer.
+category: utilities
+profiles: [developer, devops, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: htop
+  DNF: htop
+  PACMAN: htop
+  ZYPPER: htop
+
+verification:
+  executable: htop
+  version_command: [htop, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: https://htop.dev/

@@ -1,0 +1,27 @@
+id: curl
+name: curl
+description: Command-line tool for transferring data with URLs.
+category: essentials
+profiles: [developer, devops, network-engineer, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: curl
+  DNF: curl
+  PACMAN: curl
+  ZYPPER: curl
+
+verification:
+  executable: curl
+  version_command: [curl, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: false
+risk_level: LOW
+requires_root: true
+documentation_url: https://curl.se/docs/

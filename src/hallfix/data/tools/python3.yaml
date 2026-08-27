@@ -1,0 +1,29 @@
+# Package name genuinely differs on Arch: "python" ships Python 3 there,
+# there is no separate "python3" package (spec §22 is exactly this case).
+id: python3
+name: Python 3
+description: Python 3 interpreter.
+category: languages
+profiles: [developer, data-ai, full-stack-developer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: python3
+  DNF: python3
+  PACMAN: python
+  ZYPPER: python3
+
+verification:
+  executable: python3
+  version_command: [python3, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: "3.11"
+recommended_version: null
+optional: false
+risk_level: LOW
+requires_root: true
+documentation_url: https://docs.python.org/3/
