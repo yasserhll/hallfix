@@ -27,6 +27,7 @@ def _runner() -> FakeCommandRunner:
     runner.stub(("git", "--version"), ok_result(("git", "--version"), "git version 2.43.0"))
     runner.stub(("docker", "--version"), ok_result(("docker", "--version"), "", exit_code=127))
     runner.stub(("ssh", "-V"), ok_result(("ssh", "-V"), "", exit_code=127))
+    runner.stub(("dpkg", "--audit"), ok_result(("dpkg", "--audit"), ""))
     return runner
 
 
@@ -41,6 +42,7 @@ def test_build_diagnostic_context_assembles_all_fields(fake_systems_dir: Path) -
     assert ctx.package_manager_lock is not None
     assert ctx.package_manager_lock.locked is False
     assert ctx.dns_resolution_ok is True
+    assert ctx.package_broken_state is False
     assert ctx.tool_verifications["git"].executable_found is True
     assert ctx.tool_verifications["docker"].executable_found is False
     assert "HOME" in ctx.env or ctx.env == {} or isinstance(ctx.env, dict)
@@ -75,3 +77,4 @@ def test_run_doctor_produces_results(fake_systems_dir: Path) -> None:
     assert "system.os" in ids
     assert "network.dns_resolution" in ids
     assert "development.git" in ids
+    assert "package.broken_state" in ids

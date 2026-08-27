@@ -24,10 +24,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from hallfix.detectors.tool_verifier import ToolVerifier
+from hallfix.domain.models.system import PackageManagerKind
 from hallfix.domain.planning.action import (
     Action,
     InstallPackageAction,
     RemovePackageAction,
+    RepairPackageManagerAction,
     UpdatePackageIndexAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan
@@ -90,16 +92,20 @@ class Executor:
             return self._execute_remove(action, dry_run=dry_run)
         if isinstance(action, UpdatePackageIndexAction):
             return self._execute_refresh(action, dry_run=dry_run)
+        if isinstance(action, RepairPackageManagerAction):
+            return self._execute_repair(action, dry_run=dry_run)
         msg = f"Executor: no rule for action type {type(action).__name__}"  # pragma: no cover
         raise NotImplementedError(msg)  # pragma: no cover
 
     def _manager_for(
         self, action: InstallPackageAction | RemovePackageAction | UpdatePackageIndexAction
     ) -> PackageManager:
-        kind = _MANAGER_KIND_FOR_STRATEGY[action.strategy]
+        return self._manager_for_kind(_MANAGER_KIND_FOR_STRATEGY[action.strategy])
+
+    def _manager_for_kind(self, kind: PackageManagerKind) -> PackageManager:
         manager = create_package_manager(kind, command_runner=self._command_runner, root=self._root)
-        if manager is None:  # pragma: no cover - strategy->kind mapping guarantees this
-            msg = f"no package manager for strategy {action.strategy.value}"
+        if manager is None:  # pragma: no cover - callers only pass kinds known to resolve
+            msg = f"no package manager for kind {kind.value}"
             raise AssertionError(msg)
         return manager
 
@@ -142,6 +148,19 @@ class Executor:
     ) -> ActionExecutionResult:
         manager = self._manager_for(action)
         result = manager.refresh_metadata(dry_run=dry_run)
+        return ActionExecutionResult(
+            action=action,
+            succeeded=result.succeeded,
+            already_satisfied=False,
+            message=result.message,
+            dry_run=result.dry_run,
+        )
+
+    def _execute_repair(
+        self, action: RepairPackageManagerAction, *, dry_run: bool
+    ) -> ActionExecutionResult:
+        manager = self._manager_for_kind(action.manager_kind)
+        result = manager.repair(dry_run=dry_run)
         return ActionExecutionResult(
             action=action,
             succeeded=result.succeeded,

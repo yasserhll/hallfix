@@ -15,6 +15,7 @@ from hallfix.domain.planning.action import (
     ActionRisk,
     InstallPackageAction,
     RemovePackageAction,
+    RepairPackageManagerAction,
     UpdatePackageIndexAction,
 )
 
@@ -46,6 +47,16 @@ class RiskEvaluator:
                 requires_root=True,
                 requires_network=True,
                 reversible=True,
+                rollback_strategy=None,
+            )
+        if isinstance(action, RepairPackageManagerAction):
+            # Not claimed reversible: "un-configuring" packages back to a
+            # half-installed state isn't a real rollback (spec §11).
+            return ActionRisk(
+                risk_level=action.fix_risk_level,
+                requires_root=True,
+                requires_network=False,
+                reversible=False,
                 rollback_strategy=None,
             )
         msg = f"RiskEvaluator: no rule for action type {type(action).__name__}"  # pragma: no cover

@@ -14,6 +14,7 @@ from rich.console import Console
 
 from hallfix import __version__
 from hallfix.cli.commands import doctor as doctor_commands
+from hallfix.cli.commands import fix as fix_commands
 from hallfix.cli.commands import history as history_commands
 from hallfix.cli.commands import network as network_commands
 from hallfix.cli.commands import plan as plan_commands
@@ -37,6 +38,8 @@ app.add_typer(history_commands.app, name="history")
 app.add_typer(profile_commands.app, name="profile")
 app.add_typer(doctor_commands.app, name="doctor")
 app.add_typer(network_commands.app, name="network")
+app.command("repair")(fix_commands.repair)
+app.command("fix")(fix_commands.fix)
 
 
 @app.callback()

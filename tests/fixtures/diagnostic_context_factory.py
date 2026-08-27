@@ -16,6 +16,7 @@ def make_diagnostic_context(
     disk_thresholds: DiskThresholds | None = None,
     package_manager_lock: LockStatus | None = None,
     dns_resolution_ok: bool | None = None,
+    package_broken_state: bool | None = None,
     tool_verifications: dict[str, ToolVerificationResult] | None = None,
     env: dict[str, str] | None = None,
 ) -> DiagnosticContext:
@@ -27,6 +28,7 @@ def make_diagnostic_context(
         disk_thresholds=disk_thresholds or DiskThresholds(),
         package_manager_lock=package_manager_lock,
         dns_resolution_ok=dns_resolution_ok,
+        package_broken_state=package_broken_state,
         tool_verifications=tool_verifications or {},
         env=env
         if env is not None

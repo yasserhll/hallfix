@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from hallfix.domain.models.enums import RiskLevel
+from hallfix.domain.models.system import PackageManagerKind
 from hallfix.domain.models.tool import InstallationStrategy
 from hallfix.domain.planning.action import (
     InstallPackageAction,
     RemovePackageAction,
+    RepairPackageManagerAction,
     UpdatePackageIndexAction,
 )
 from hallfix.domain.planning.risk_evaluator import RiskEvaluator
@@ -47,3 +49,17 @@ def test_update_package_index_is_always_low_risk() -> None:
     assert risk.requires_root is True
     assert risk.requires_network is True
     assert risk.reversible is True
+
+
+def test_repair_package_manager_uses_fix_declared_risk_level() -> None:
+    action = RepairPackageManagerAction(
+        fix_id="fix.package_broken_state",
+        manager_kind=PackageManagerKind.APT,
+        fix_risk_level=RiskLevel.LOW,
+    )
+    risk = evaluator.evaluate(action)
+    assert risk.risk_level == RiskLevel.LOW
+    assert risk.requires_root is True
+    assert risk.requires_network is False
+    assert risk.reversible is False
+    assert risk.rollback_strategy is None

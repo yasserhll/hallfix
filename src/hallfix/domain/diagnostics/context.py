@@ -23,5 +23,6 @@ class DiagnosticContext:
     disk_thresholds: DiskThresholds
     package_manager_lock: LockStatus | None = None
     dns_resolution_ok: bool | None = None  # None = not tested (e.g. no raw connectivity)
+    package_broken_state: bool | None = None  # None = not checked (non-APT system)
     tool_verifications: dict[str, ToolVerificationResult] = field(default_factory=dict)
     env: dict[str, str] = field(default_factory=dict)

@@ -122,6 +122,16 @@ dev-tool verification, DNS probe), and `detectors/dns_resolution.py` (a
 second, DNS-specific connectivity probe distinct from Phase 2's raw-IP
 check). `hallfix doctor`, `hallfix network info/doctor` — all read-only.
 
+## Phase 10 status
+
+Implemented: `domain/models/fix.py`/`domain/registries/fix_registry.py`
+(`FixRegistry`, one entry — see `CHANGELOG.md` for why not more),
+`ActionType.REPAIR_PACKAGE_MANAGER`/`RepairPackageManagerAction`
+(reusing `RiskEvaluator`/`Executor`, not a separate execution path),
+`Planner.plan_fix`, and `hallfix repair` / `hallfix fix <diagnostic-id>`.
+A fix goes through the identical Planner -> SafetyPolicy -> confirmation
+-> Executor -> History path as any other system change.
+
 Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
-(needs "is this profile currently installed" tracking), fixes,
+(needs "is this profile currently installed" tracking),
 backup/rollback, reports.

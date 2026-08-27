@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from hallfix.domain.models.enums import RiskLevel
+from hallfix.domain.models.system import PackageManagerKind
 from hallfix.domain.models.tool import InstallationStrategy
 
 
@@ -21,6 +22,7 @@ class ActionType(StrEnum):
     INSTALL_PACKAGE = "INSTALL_PACKAGE"
     REMOVE_PACKAGE = "REMOVE_PACKAGE"
     UPDATE_PACKAGE_INDEX = "UPDATE_PACKAGE_INDEX"
+    REPAIR_PACKAGE_MANAGER = "REPAIR_PACKAGE_MANAGER"
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +49,20 @@ class UpdatePackageIndexAction:
     type: ActionType = field(default=ActionType.UPDATE_PACKAGE_INDEX, init=False)
 
 
-Action = InstallPackageAction | RemovePackageAction | UpdatePackageIndexAction
+@dataclass(frozen=True, slots=True)
+class RepairPackageManagerAction:
+    fix_id: str
+    manager_kind: PackageManagerKind
+    fix_risk_level: RiskLevel
+    type: ActionType = field(default=ActionType.REPAIR_PACKAGE_MANAGER, init=False)
+
+
+Action = (
+    InstallPackageAction
+    | RemovePackageAction
+    | UpdatePackageIndexAction
+    | RepairPackageManagerAction
+)
 
 
 @dataclass(frozen=True, slots=True)

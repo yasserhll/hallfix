@@ -21,12 +21,15 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
+from hallfix.detectors.package_health import check_dpkg_broken_state
+from hallfix.domain.models.fix import FixDefinition
 from hallfix.domain.models.profile import ProfileDefinition
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.models.tool import NATIVE_INSTALLATION_STRATEGIES, ToolDefinition
 from hallfix.domain.planning.action import (
     InstallPackageAction,
     RemovePackageAction,
+    RepairPackageManagerAction,
     UpdatePackageIndexAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan, PlannedAction
@@ -174,6 +177,33 @@ class Planner:
             description=f"Refresh {native_strategy.value} package metadata",
         )
         return self._build_plan("Refresh package metadata", [planned])
+
+    def plan_fix(self, fix: FixDefinition, context: SystemContext) -> ExecutionPlan:
+        """Builds a plan for one fix — spec §43: always diagnose first, and a
+        fix is applied through the exact same Planner/SafetyPolicy/Executor
+        path as any other system change, never a separate mechanism.
+        """
+        if (
+            fix.supported_distributions
+            and context.distribution.family not in fix.supported_distributions
+        ):
+            return self._empty_plan(
+                f"{fix.id} is not supported on {context.distribution.family.value} systems."
+            )
+
+        if fix.id == "fix.package_broken_state":
+            if not check_dpkg_broken_state(self._command_runner):
+                return self._empty_plan("No broken package state detected; nothing to repair.")
+            action = RepairPackageManagerAction(
+                fix_id=fix.id,
+                manager_kind=context.package_manager.kind,
+                fix_risk_level=fix.risk_level,
+            )
+            risk = self._risk_evaluator.evaluate(action)
+            planned = PlannedAction(action=action, risk=risk, description=fix.description)
+            return self._build_plan(f"Apply fix: {fix.id}", [planned])
+
+        return self._empty_plan(f"No execution handler for fix {fix.id}.")
 
     def _empty_plan(self, description: str) -> ExecutionPlan:
         return ExecutionPlan(

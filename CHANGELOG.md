@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased — Phase 10: Safe Fixes
+
+- Deliberately only **one** fix exists: cross-referencing spec §43's
+  forbidden repair categories (bootloader/partitions/firewall/SSH/network
+  config/filesystem repair/kernel/drivers) against Phase 9's actual
+  diagnostics leaves exactly one genuinely safe, well-understood
+  candidate — repairing broken/half-configured dpkg package state, which
+  is what `PackageManager.repair()` already did since Phase 3. Disk
+  space, package locks, and DNS/network config are all diagnosed but
+  deliberately have no automated fix, rather than padding the registry
+  with unsafe or fake entries (spec §84).
+- Key architectural decision: a fix is **not** a separate execution
+  system. Added one new `ActionType` (`REPAIR_PACKAGE_MANAGER`) and
+  `RepairPackageManagerAction`, handled by the existing `RiskEvaluator`/
+  `Executor`; `Planner.plan_fix` reuses `ExecutionPlan` exactly like tool/
+  profile installs. `hallfix repair`/`hallfix fix <id>` go through the
+  identical Planner -> SafetyPolicy -> confirmation -> Executor -> History
+  path — spec §84's "never bypass the Planner" applies to fixes too, not
+  just installs.
+- `domain/models/fix.py` + `domain/registries/fix_registry.py`:
+  `FixDefinition`/`FixRegistry` — hardcoded in Python, not YAML (one
+  entry doesn't justify a data-loading pipeline; revisit if this grows).
+- `detectors/package_health.py` (`check_dpkg_broken_state`) + a new
+  `package.broken_state` diagnostic (APT-only; other managers report "not
+  checked", never a false claim).
+- `Planner.plan_fix` re-checks `check_dpkg_broken_state` itself before
+  building an action (mirroring `plan_tool_install`'s `is_installed`
+  check) — running a repair when nothing is actually broken would be
+  needless, even though the underlying `dpkg --configure -a` is harmless.
+- Real bug caught in CLI smoke testing (not unit tests): `hallfix fix
+  <id>` on a diagnostic that's currently OK printed "No automated fix
+  available for this issue" — technically true but misleading, since it
+  reads as "Hallfix can't fix this category of problem" (true for DNS)
+  rather than "nothing is wrong right now" (the actual case). Split into
+  a distinct "Nothing to fix." message (exit 0, a success state) versus
+  the genuine no-fix-exists message (exit 1) — verified with a regression
+  test that doesn't depend on the live host's actual network state.
+
 ## Unreleased — Phase 9: Doctor
 
 - `domain/models/diagnostic.py`: `DiagnosticResult` — stable dotted `id`

@@ -65,3 +65,38 @@ def check_package_manager_lock(ctx: DiagnosticContext) -> tuple[DiagnosticResult
             description="Not locked.",
         ),
     )
+
+
+def check_package_broken_state(ctx: DiagnosticContext) -> tuple[DiagnosticResult, ...]:
+    if ctx.package_broken_state is None:
+        return (
+            DiagnosticResult(
+                id="package.broken_state",
+                category="package",
+                severity=Severity.INFO,
+                title="Package state",
+                description="Not checked (only supported on APT/dpkg systems).",
+            ),
+        )
+    if ctx.package_broken_state:
+        return (
+            DiagnosticResult(
+                id="package.broken_state",
+                category="package",
+                severity=Severity.WARNING,
+                title="Package state",
+                description="Some packages are in a broken/half-installed state.",
+                recommendation="Run 'hallfix fix package.broken_state' or 'hallfix repair'.",
+                fix_available=True,
+                fix_id="fix.package_broken_state",
+            ),
+        )
+    return (
+        DiagnosticResult(
+            id="package.broken_state",
+            category="package",
+            severity=Severity.OK,
+            title="Package state",
+            description="No broken packages detected.",
+        ),
+    )

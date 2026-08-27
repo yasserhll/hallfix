@@ -16,12 +16,14 @@ from pathlib import Path
 from hallfix.config.manager import ConfigurationManager
 from hallfix.detectors.dns_resolution import DnsResolutionChecker, check_dns_resolution
 from hallfix.detectors.internet import ConnectivityChecker, check_internet_connectivity
+from hallfix.detectors.package_health import check_dpkg_broken_state
 from hallfix.detectors.system import SystemDetector
 from hallfix.detectors.tool_verifier import ToolVerifier
 from hallfix.domain.diagnostics.context import DiagnosticContext
 from hallfix.domain.diagnostics.engine import DiagnosticEngine
 from hallfix.domain.diagnostics.registry import DiagnosticRegistry
 from hallfix.domain.models.diagnostic import DiagnosticResult
+from hallfix.domain.models.system import PackageManagerKind
 from hallfix.domain.models.tool import ToolVerificationResult
 from hallfix.infrastructure.commands.runner import CommandRunner
 from hallfix.infrastructure.package_managers.registry import create_package_manager
@@ -51,6 +53,10 @@ def build_diagnostic_context(
 
     dns_ok = dns_checker() if system.capabilities.internet_access else None
 
+    broken_state = None
+    if system.package_manager.kind == PackageManagerKind.APT:
+        broken_state = check_dpkg_broken_state(command_runner)
+
     verifier = ToolVerifier(command_runner=command_runner)
     tool_registry = load_tool_registry()
     verifications: dict[str, ToolVerificationResult] = {}
@@ -64,6 +70,7 @@ def build_diagnostic_context(
         disk_thresholds=config.disk_thresholds,
         package_manager_lock=lock,
         dns_resolution_ok=dns_ok,
+        package_broken_state=broken_state,
         tool_verifications=verifications,
         env=dict(os.environ),
     )

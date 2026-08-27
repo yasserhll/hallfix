@@ -23,6 +23,7 @@ from hallfix.domain.diagnostics.network_checks import (
     check_network_interfaces,
 )
 from hallfix.domain.diagnostics.package_checks import (
+    check_package_broken_state,
     check_package_manager,
     check_package_manager_lock,
 )
@@ -54,6 +55,7 @@ DEFAULT_CHECKS: tuple[DiagnosticCheck, ...] = (
     check_dns_configured,
     check_dns_resolution,
     check_internet_connectivity,
+    check_package_broken_state,
     check_package_manager,
     check_package_manager_lock,
     check_git,
