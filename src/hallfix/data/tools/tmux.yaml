@@ -1,0 +1,27 @@
+id: tmux
+name: tmux
+description: Terminal multiplexer.
+category: utilities
+profiles: [developer, devops, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: tmux
+  DNF: tmux
+  PACMAN: tmux
+  ZYPPER: tmux
+
+verification:
+  executable: tmux
+  version_command: [tmux, -V]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: https://github.com/tmux/tmux/wiki

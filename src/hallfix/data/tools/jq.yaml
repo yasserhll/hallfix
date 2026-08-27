@@ -1,0 +1,27 @@
+id: jq
+name: jq
+description: Command-line JSON processor.
+category: utilities
+profiles: [developer, devops, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: jq
+  DNF: jq
+  PACMAN: jq
+  ZYPPER: jq
+
+verification:
+  executable: jq
+  version_command: [jq, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: https://jqlang.org/

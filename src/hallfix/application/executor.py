@@ -59,15 +59,19 @@ class Executor:
         self._verifier = ToolVerifier(command_runner=command_runner)
         self._state_store = state_store
 
-    def execute_plan(self, plan: ExecutionPlan, *, dry_run: bool = False) -> PlanExecutionResult:
+    def execute_plan(
+        self, plan: ExecutionPlan, *, dry_run: bool = False, profile_id: str | None = None
+    ) -> PlanExecutionResult:
         results = tuple(
             self._execute_one(planned.action, dry_run=dry_run) for planned in plan.planned_actions
         )
         if not dry_run and self._state_store is not None:
-            self._record_ownership(results)
+            self._record_ownership(results, profile_id=profile_id)
         return PlanExecutionResult(plan_id=plan.id, dry_run=dry_run, action_results=results)
 
-    def _record_ownership(self, results: tuple[ActionExecutionResult, ...]) -> None:
+    def _record_ownership(
+        self, results: tuple[ActionExecutionResult, ...], *, profile_id: str | None
+    ) -> None:
         state_store = self._state_store
         if state_store is None:  # pragma: no cover - caller already checked
             return
@@ -75,7 +79,7 @@ class Executor:
             if not result.succeeded:
                 continue
             if isinstance(result.action, InstallPackageAction) and not result.already_satisfied:
-                state_store.record_installed(result.action.tool_id)
+                state_store.record_installed(result.action.tool_id, profile=profile_id)
             elif isinstance(result.action, RemovePackageAction):
                 state_store.record_removed(result.action.tool_id)
 

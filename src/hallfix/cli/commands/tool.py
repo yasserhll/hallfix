@@ -20,6 +20,7 @@ from rich.table import Table
 from hallfix.application.executor import Executor
 from hallfix.application.planner import Planner
 from hallfix.cli.confirmation import resolve_confirmation
+from hallfix.cli.rendering import render_execution_result, render_plan_human
 from hallfix.detectors.system import SystemDetector
 from hallfix.detectors.tool_verifier import ToolVerifier
 from hallfix.domain.exceptions import RegistryError
@@ -27,7 +28,6 @@ from hallfix.domain.models.history import ActionOutcome
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.models.tool import ToolDefinition
 from hallfix.domain.planning.execution_plan import ExecutionPlan
-from hallfix.domain.planning.execution_result import PlanExecutionResult
 from hallfix.domain.registries.compatibility import (
     assess_compatibility,
     resolve_installation_strategy,
@@ -139,40 +139,6 @@ def info(tool_id: str) -> None:
     _print_tool_info(Console(), tool, _detect_system())
 
 
-def _render_plan_human(console: Console, plan: ExecutionPlan) -> None:
-    console.print("[bold]HALLFIX EXECUTION PLAN[/bold]\n")
-    console.print(f"Plan: {plan.id}")
-    console.print(plan.description)
-    if plan.is_noop:
-        console.print("\nNo actions required. No changes were made.")
-        return
-    console.print("\nActions:\n")
-    for planned in plan.planned_actions:
-        console.print(f"[{planned.risk.risk_level.value}] {planned.description}")
-    console.print(f"\nRequires administrator privileges: {'YES' if plan.requires_root else 'NO'}")
-    console.print(f"Requires Internet: {'YES' if plan.requires_network else 'NO'}")
-    console.print(f"Reversible: {'YES' if plan.reversible else 'NO'}")
-    console.print("\nNo changes were made.")
-
-
-def _render_execution_result(console: Console, result: PlanExecutionResult) -> None:
-    for action_result in result.action_results:
-        marker = "✓" if action_result.succeeded else "✗"
-        console.print(
-            f"{marker} {action_result.message.strip() or action_result.action.type.value}"
-        )
-        if action_result.verification is not None:
-            v = action_result.verification
-            if v.executable_found:
-                console.print(f"  ✓ Executable found (version {v.installed_version or 'unknown'})")
-            else:
-                console.print("  ✗ Executable not found after installation")
-
-    console.print(f"\nSuccessful: {result.succeeded_count}  Failed: {result.failed_count}")
-    if not result.fully_succeeded:
-        console.print("Completed with warnings.")
-
-
 _PlanBuilder = Callable[[Planner, ToolDefinition, SystemContext], ExecutionPlan]
 
 
@@ -211,7 +177,7 @@ def _run_mutation(
 
     dry_run = bool(cli_ctx and cli_ctx.dry_run)
     if dry_run:
-        _render_plan_human(console, plan)
+        render_plan_human(console, plan)
         history.append(
             command=command_label,
             plan_id=plan.id,
@@ -258,7 +224,7 @@ def _run_mutation(
     if cli_ctx is not None and cli_ctx.json_output:
         typer.echo(json.dumps(dataclasses.asdict(result), default=str, indent=2))
     else:
-        _render_execution_result(console, result)
+        render_execution_result(console, result)
 
     if not result.fully_succeeded:
         raise typer.Exit(code=1)

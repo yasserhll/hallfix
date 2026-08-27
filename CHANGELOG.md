@@ -1,5 +1,49 @@
 # Changelog
 
+## Unreleased — Phase 8: Profiles
+
+- `domain/models/profile.py` + `domain/registries/profile_registry.py`:
+  `ProfileDefinition`/`ProfileRegistry`, same validate-at-load-time
+  pattern as tools. Deliberately does not cross-validate tool references
+  against `ToolRegistry` at load time (would couple load order) — an
+  unresolvable tool id is reported clearly wherever the profile is
+  actually used instead.
+- `ExecutionPlan` gained a `notes: tuple[str, ...]` field for informational
+  per-tool status in a multi-tool plan (already-satisfied, unknown tool) —
+  purely descriptive, never affects risk/execution.
+- `Planner.plan_profile_install` builds one plan covering every tool in a
+  profile by calling `plan_tool_install` per tool and merging the
+  results — spec §35: custom profiles (and every profile, by the same
+  reasoning) must reuse the same Planner, never a second install system.
+  `Executor.execute_plan` gained `profile_id`, threaded to
+  `StateStore.record_installed` so `installed_for` (built in Phase 7) is
+  finally populated.
+- `domain/registries/profile_diff.py`: pure `compute_profile_diff` —
+  installed/missing/version-mismatch, computed from an already-run
+  `{tool_id: ToolVerificationResult}` mapping. No "configuration" section
+  (spec's "Docker installed but service disabled" example) since service
+  detection doesn't exist yet.
+- `hallfix profile list/show/diff/install` — `diff` never modifies the
+  system (spec §36); `install custom --tools a,b,c` builds an ad-hoc
+  `ProfileDefinition` on the fly and goes through the identical
+  Planner -> SafetyPolicy -> confirmation -> Executor path as a real
+  profile. `profile remove` deliberately does not exist yet — spec §37's
+  shared-dependency safety check needs "is this profile currently
+  installed" tracking Hallfix doesn't have.
+- Two more tools added (`jq`, `tmux`) so Developer/DevOps profiles have
+  something real to install; both profiles are explicitly scoped to only
+  the tools Hallfix's registry actually defines (no kubectl/Terraform/
+  Node.js/etc. references to tools that don't exist).
+- Extracted `cli/rendering.py` (`render_plan_human`/`render_execution_result`)
+  out of `tool.py` — `profile.py` needed the identical rendering, so this
+  was the third call site, not a hypothetical one.
+- Real bug caught before it shipped (unit test, not smoke test): the CLI's
+  `_require_profile`-equivalent originally called `ProfileRegistry.require()`
+  directly, which raises `RegistryError` uncaught for an unknown profile —
+  inconsistent with `tool.py`'s clean `get()` + typer.Exit(1) pattern.
+  Fixed with a `_require_profile` helper before any test caught it in CI;
+  caught while writing the integration tests.
+
 ## Unreleased — Phase 7: State & History
 
 - `infrastructure/state/store.py`: `StateStore` — a single JSON snapshot

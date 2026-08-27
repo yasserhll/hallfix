@@ -1,0 +1,10 @@
+# Intentionally scoped to tools Hallfix's registry actually defines today.
+# The full spec vision for this profile (§28) also lists Node.js, PHP,
+# Java, database clients, GitHub CLI, VS Code/Neovim — none of those have
+# a ToolDefinition yet, so they're left out rather than referenced and
+# silently unresolved. Extend src/hallfix/data/tools/ first, then add here.
+id: developer
+name: Developer
+description: General-purpose development workstation.
+categories: [essentials, languages, containers, utilities, development]
+tools: [git, curl, python3, docker, htop, tmux, jq, black]

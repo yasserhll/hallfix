@@ -21,6 +21,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
+from hallfix.domain.models.profile import ProfileDefinition
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.models.tool import NATIVE_INSTALLATION_STRATEGIES, ToolDefinition
 from hallfix.domain.planning.action import (
@@ -34,6 +35,7 @@ from hallfix.domain.registries.compatibility import (
     NATIVE_STRATEGY_BY_MANAGER,
     resolve_installation_strategy,
 )
+from hallfix.domain.registries.tool_registry import ToolRegistry
 from hallfix.infrastructure.commands.runner import CommandRunner
 from hallfix.infrastructure.package_managers.registry import create_package_manager
 from hallfix.utils.version import meets_minimum
@@ -122,6 +124,42 @@ class Planner:
             description=f"Remove {tool.name} via {strategy.value} (package: {package})",
         )
         return self._build_plan(f"Remove {tool.name}", [planned])
+
+    def plan_profile_install(
+        self, profile: ProfileDefinition, tool_registry: ToolRegistry, context: SystemContext
+    ) -> ExecutionPlan:
+        """Builds one plan covering every tool in the profile.
+
+        Reuses ``plan_tool_install`` per tool rather than duplicating its
+        idempotence/compatibility logic — spec §35: custom profiles (and,
+        by the same reasoning, every profile) must go through the same
+        Planner, never a second install path.
+        """
+        planned: list[PlannedAction] = []
+        notes: list[str] = []
+
+        for tool_id in profile.tools:
+            tool = tool_registry.get(tool_id)
+            if tool is None:
+                notes.append(f"{tool_id}: unknown tool, skipped")
+                continue
+            single_plan = self.plan_tool_install(tool, context)
+            if single_plan.is_noop:
+                notes.append(f"{tool.name}: {single_plan.description}")
+                continue
+            planned.extend(single_plan.planned_actions)
+
+        description = (
+            f"Install {profile.name} profile: {len(planned)} to install, "
+            f"{len(notes)} already satisfied or unavailable"
+        )
+        return ExecutionPlan(
+            id=self._id_factory(),
+            created_at=self._clock(),
+            description=description,
+            planned_actions=tuple(planned),
+            notes=tuple(notes),
+        )
 
     def plan_refresh_metadata(self, context: SystemContext) -> ExecutionPlan:
         native_strategy = NATIVE_STRATEGY_BY_MANAGER.get(context.package_manager.kind)

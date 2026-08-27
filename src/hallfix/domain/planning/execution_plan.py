@@ -38,6 +38,10 @@ class ExecutionPlan:
     created_at: datetime
     description: str
     planned_actions: tuple[PlannedAction, ...] = field(default_factory=tuple)
+    notes: tuple[str, ...] = field(default_factory=tuple)
+    """Informational messages that aren't actions — e.g. per-tool status in
+    a multi-tool profile plan ("curl: already installed", "foo: unknown
+    tool, skipped"). Purely descriptive; never affects risk/execution."""
 
     @property
     def risk_level(self) -> RiskLevel:

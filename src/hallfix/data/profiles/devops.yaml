@@ -1,0 +1,8 @@
+# Intentionally scoped to tools Hallfix's registry actually defines today.
+# The full spec vision for this profile (§29) also lists kubectl, Helm,
+# Terraform, Ansible, cloud CLIs — none have a ToolDefinition yet.
+id: devops
+name: DevOps
+description: Infrastructure and operations workstation.
+categories: [essentials, containers, utilities]
+tools: [git, curl, docker, htop, tmux, jq]

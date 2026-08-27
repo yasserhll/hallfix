@@ -103,6 +103,16 @@ after real installs/removes only; `hallfix tool info` surfaces it,
 `hallfix tool install/remove` write to history, `hallfix history[/show]`
 reads it back.
 
-Not yet implemented (later phases, see `CHANGELOG.md`): profile registry
-(where `installed_for`/shared-dependency tracking becomes load-bearing),
-diagnostics, fixes, backup/rollback, reports.
+## Phase 8 status
+
+Implemented: `domain/registries/profile_registry.py` (`ProfileRegistry`),
+`domain/registries/profile_diff.py` (pure diff computation),
+`Planner.plan_profile_install` (multi-tool plans built by composing
+`plan_tool_install` per tool, never a second install path), and
+`Executor`'s `profile_id` threading into `StateStore.installed_for`.
+`hallfix profile list/show/diff/install` — `install custom --tools ...`
+goes through the identical execution path as a registry-defined profile.
+
+Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
+(needs "is this profile currently installed" tracking), diagnostics,
+fixes, backup/rollback, reports.
