@@ -34,3 +34,7 @@ class RegistryError(HallfixError):
 
 class SafetyPolicyViolation(HallfixError):
     """Raised when an action is blocked by SafetyPolicy and execution must stop."""
+
+
+class BackupError(HallfixError):
+    """Raised when a backup or restore operation cannot be completed."""

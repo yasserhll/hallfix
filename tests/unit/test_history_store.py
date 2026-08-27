@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from hallfix.domain.models.history import ActionOutcome
@@ -117,6 +118,71 @@ def test_blank_lines_are_ignored(tmp_path: Path) -> None:
     with path.open("a", encoding="utf-8") as handle:
         handle.write("\n\n")
     assert len(store.list_all()) == 1
+
+
+def test_rollback_fields_round_trip(tmp_path: Path) -> None:
+    store = HistoryStore(path=tmp_path / "history.jsonl")
+    store.append(
+        command="tool install git",
+        plan_id="p1",
+        plan_description="d",
+        dry_run=False,
+        plan_reversible=True,
+        action_outcomes=(
+            ActionOutcome(
+                action_type="INSTALL_PACKAGE",
+                succeeded=True,
+                already_satisfied=False,
+                message="ok",
+                reversible=True,
+                rollback_strategy="remove_package",
+                tool_id="git",
+                package="git",
+                strategy="APT",
+                risk_level="LOW",
+            ),
+        ),
+    )
+    (record,) = store.list_all()
+    outcome = record.action_outcomes[0]
+    assert outcome.reversible is True
+    assert outcome.rollback_strategy == "remove_package"
+    assert outcome.tool_id == "git"
+    assert outcome.package == "git"
+    assert outcome.strategy == "APT"
+    assert outcome.risk_level == "LOW"
+    assert outcome.rollback_eligible is True
+
+
+def test_pre_phase11_history_lines_still_parse_as_not_rollback_eligible(tmp_path: Path) -> None:
+    """A history line written before rollback fields existed must still
+    load — correctly coming back as not rollback-eligible, since Hallfix
+    genuinely lacks the detail to safely roll it back either way."""
+    path = tmp_path / "history.jsonl"
+    old_style_line = json.dumps(
+        {
+            "id": "HF-001",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "command": "tool install git",
+            "plan_id": "p1",
+            "plan_description": "d",
+            "dry_run": False,
+            "plan_reversible": True,
+            "action_outcomes": [
+                {
+                    "action_type": "INSTALL_PACKAGE",
+                    "succeeded": True,
+                    "already_satisfied": False,
+                    "message": "ok",
+                }
+            ],
+        }
+    )
+    path.write_text(old_style_line + "\n", encoding="utf-8")
+
+    (record,) = HistoryStore(path=path).list_all()
+    assert record.action_outcomes[0].rollback_eligible is False
+    assert record.is_rollback_eligible is False
 
 
 def test_next_id_accounts_for_existing_records_on_fresh_store_instance(tmp_path: Path) -> None:

@@ -22,10 +22,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from hallfix.detectors.package_health import check_dpkg_broken_state
+from hallfix.domain.models.enums import RiskLevel
 from hallfix.domain.models.fix import FixDefinition
+from hallfix.domain.models.history import OperationRecord
 from hallfix.domain.models.profile import ProfileDefinition
 from hallfix.domain.models.system import SystemContext
-from hallfix.domain.models.tool import NATIVE_INSTALLATION_STRATEGIES, ToolDefinition
+from hallfix.domain.models.tool import (
+    NATIVE_INSTALLATION_STRATEGIES,
+    InstallationStrategy,
+    ToolDefinition,
+)
 from hallfix.domain.planning.action import (
     InstallPackageAction,
     RemovePackageAction,
@@ -204,6 +210,58 @@ class Planner:
             return self._build_plan(f"Apply fix: {fix.id}", [planned])
 
         return self._empty_plan(f"No execution handler for fix {fix.id}.")
+
+    def plan_rollback(self, record: OperationRecord) -> ExecutionPlan:
+        """Builds a plan undoing whatever *is* safely undoable in ``record``
+        — spec §11: never claim rollback is available when it is not, so
+        this only ever acts on outcomes that were themselves marked
+        reversible with a known strategy at record time, never on the
+        record's aggregate ``plan_reversible`` flag.
+        """
+        eligible = record.rollback_eligible_outcomes
+        if not eligible:
+            return self._empty_plan(
+                f"{record.id} has nothing that can be automatically rolled back."
+            )
+
+        planned: list[PlannedAction] = []
+        notes: list[str] = []
+        for outcome in eligible:
+            if outcome.rollback_strategy != "remove_package":
+                notes.append(
+                    f"{outcome.tool_id or outcome.action_type}: unsupported rollback strategy"
+                )
+                continue
+            if not outcome.tool_id or not outcome.package or not outcome.strategy:
+                notes.append(f"{outcome.tool_id or outcome.action_type}: incomplete history detail")
+                continue
+            action = RemovePackageAction(
+                tool_id=outcome.tool_id,
+                package=outcome.package,
+                strategy=InstallationStrategy(outcome.strategy),
+                tool_risk_level=RiskLevel(outcome.risk_level)
+                if outcome.risk_level
+                else RiskLevel.LOW,
+            )
+            risk = self._risk_evaluator.evaluate(action)
+            planned.append(
+                PlannedAction(
+                    action=action,
+                    risk=risk,
+                    description=f"Undo install: remove {outcome.package} (from {record.id})",
+                )
+            )
+
+        if not planned:
+            return self._empty_plan(f"{record.id}: nothing could be reconstructed for rollback.")
+
+        return ExecutionPlan(
+            id=self._id_factory(),
+            created_at=self._clock(),
+            description=f"Roll back {record.id}: {record.command}",
+            planned_actions=tuple(planned),
+            notes=tuple(notes),
+        )
 
     def _empty_plan(self, description: str) -> ExecutionPlan:
         return ExecutionPlan(

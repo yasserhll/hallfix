@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased — Phase 11: Backup & Rollback
+
+- Scope check against our actual `Action` types: only `InstallPackageAction`
+  is ever `reversible=True` with a real `rollback_strategy`
+  (`"remove_package"`) — removes, refreshes, and repairs are all already
+  correctly marked non-reversible. Rollback is therefore genuinely scoped
+  to "undo a successful install by removing the package," not a general
+  undo system.
+- `domain/models/history.py`: `ActionOutcome` extended with
+  `reversible`/`rollback_strategy`/`tool_id`/`package`/`strategy`/
+  `risk_level` — enough detail to reconstruct the one rollback strategy
+  that exists, without guessing from free-text `message`.
+  `rollback_eligible` (per outcome) and `is_rollback_eligible`/
+  `rollback_eligible_outcomes` (per record) are the actual eligibility
+  checks — spec §11: never claim rollback is available when it is not,
+  so eligibility is checked per action, never assumed from the aggregate
+  `plan_reversible` flag. Old history lines (pre-Phase-11) still parse,
+  correctly coming back as not rollback-eligible.
+- `cli/history_recording.py`: `build_action_outcomes` — the one place
+  that extracts this detail from a real `Action`, replacing near-identical
+  inline construction that had been duplicated across `tool.py`/
+  `profile.py`/`fix.py`.
+- `Planner.plan_rollback(record)` reconstructs an `ExecutionPlan` from a
+  `HistoryStore` record's eligible outcomes — reuses `RiskEvaluator`,
+  `RemovePackageAction`, and the existing `Executor`, exactly like
+  `plan_fix` before it (spec §84: never a separate mechanism). Rollback
+  creates a *new* history operation; the record being rolled back is
+  never edited.
+- `hallfix rollback [operation-id]` — no argument rolls back the most
+  recent eligible operation (excluding prior rollbacks themselves, so
+  "undo the undo" requires an explicit id).
+- `infrastructure/filesystem/backup.py`: `BackupManager` (spec §46) —
+  atomic backup/restore via temp-file + `Path.replace`, naming matches
+  spec's `*.hallfix-backup-YYYYMMDD-HHMMSS` example exactly, ownership
+  preservation is best-effort ("when applicable" per spec's own wording).
+  No `Action` calls this yet (no `WRITE_FILE`/`MODIFY_FILE` action type
+  exists) — built as real, tested, standalone infrastructure the same way
+  Phase 1's `CommandRunner` predated Phase 2's detectors being its first
+  caller, not left unimplemented or faked.
+- Process note, not a code bug: while smoke-testing, ran `hallfix rollback
+  <id>` without `--dry-run` against a self-seeded history entry — a real
+  (if harmless, since it failed on the sandbox's missing sudo TTY)
+  mutating command run without checking first. Flagged directly rather
+  than silently corrected.
+
 ## Unreleased — Phase 10: Safe Fixes
 
 - Deliberately only **one** fix exists: cross-referencing spec §43's

@@ -20,12 +20,12 @@ from hallfix.application.doctor import run_doctor
 from hallfix.application.executor import Executor
 from hallfix.application.planner import Planner
 from hallfix.cli.confirmation import resolve_confirmation
+from hallfix.cli.history_recording import build_action_outcomes
 from hallfix.cli.rendering import render_execution_result, render_plan_human
 from hallfix.detectors.system import SystemDetector
 from hallfix.domain.diagnostics.engine import aggregate_health
 from hallfix.domain.models.diagnostic import DiagnosticResult
 from hallfix.domain.models.enums import Severity
-from hallfix.domain.models.history import ActionOutcome
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.registries.fix_registry import FixRegistry
 from hallfix.domain.safety.policy import SafetyPolicy
@@ -104,15 +104,7 @@ def _apply_fix(ctx: typer.Context, fix_id: str, diagnostic_id: str) -> bool:
         plan_description=plan.description,
         dry_run=False,
         plan_reversible=plan.reversible,
-        action_outcomes=tuple(
-            ActionOutcome(
-                action_type=r.action.type.value,
-                succeeded=r.succeeded,
-                already_satisfied=r.already_satisfied,
-                message=r.message,
-            )
-            for r in result.action_results
-        ),
+        action_outcomes=build_action_outcomes(plan, result),
     )
 
     if cli_ctx is not None and cli_ctx.json_output:

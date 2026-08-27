@@ -45,6 +45,12 @@ def _serialize(record: OperationRecord) -> dict[str, Any]:
                 "succeeded": o.succeeded,
                 "already_satisfied": o.already_satisfied,
                 "message": redact_text(o.message),
+                "reversible": o.reversible,
+                "rollback_strategy": o.rollback_strategy,
+                "tool_id": o.tool_id,
+                "package": redact_text(o.package) if o.package else o.package,
+                "strategy": o.strategy,
+                "risk_level": o.risk_level,
             }
             for o in record.action_outcomes
         ],
@@ -58,6 +64,17 @@ def _deserialize(data: dict[str, Any]) -> OperationRecord:
             succeeded=bool(o["succeeded"]),
             already_satisfied=bool(o["already_satisfied"]),
             message=o["message"],
+            # `.get(...)` with a default, not direct indexing: history
+            # lines written before this field existed must still parse —
+            # they correctly come back as not rollback-eligible, since
+            # Hallfix genuinely doesn't have the detail to safely roll
+            # them back either way.
+            reversible=bool(o.get("reversible", False)),
+            rollback_strategy=o.get("rollback_strategy"),
+            tool_id=o.get("tool_id"),
+            package=o.get("package"),
+            strategy=o.get("strategy"),
+            risk_level=o.get("risk_level"),
         )
         for o in data.get("action_outcomes", [])
     )

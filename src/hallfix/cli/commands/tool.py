@@ -20,11 +20,11 @@ from rich.table import Table
 from hallfix.application.executor import Executor
 from hallfix.application.planner import Planner
 from hallfix.cli.confirmation import resolve_confirmation
+from hallfix.cli.history_recording import build_action_outcomes
 from hallfix.cli.rendering import render_execution_result, render_plan_human
 from hallfix.detectors.system import SystemDetector
 from hallfix.detectors.tool_verifier import ToolVerifier
 from hallfix.domain.exceptions import RegistryError
-from hallfix.domain.models.history import ActionOutcome
 from hallfix.domain.models.system import SystemContext
 from hallfix.domain.models.tool import ToolDefinition
 from hallfix.domain.planning.execution_plan import ExecutionPlan
@@ -210,15 +210,7 @@ def _run_mutation(
         plan_description=plan.description,
         dry_run=False,
         plan_reversible=plan.reversible,
-        action_outcomes=tuple(
-            ActionOutcome(
-                action_type=r.action.type.value,
-                succeeded=r.succeeded,
-                already_satisfied=r.already_satisfied,
-                message=r.message,
-            )
-            for r in result.action_results
-        ),
+        action_outcomes=build_action_outcomes(plan, result),
     )
 
     if cli_ctx is not None and cli_ctx.json_output:

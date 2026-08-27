@@ -132,6 +132,15 @@ Implemented: `domain/models/fix.py`/`domain/registries/fix_registry.py`
 A fix goes through the identical Planner -> SafetyPolicy -> confirmation
 -> Executor -> History path as any other system change.
 
+## Phase 11 status
+
+Implemented: `Planner.plan_rollback` + `hallfix rollback [operation-id]`,
+scoped honestly to what's actually reversible today (undoing a successful
+install by removing the package — the only `Action` type ever marked
+reversible with a real strategy). `HistoryStore` records now carry enough
+detail to reconstruct that undo. `infrastructure/filesystem/backup.py`
+(`BackupManager`) is real, tested, standalone infrastructure with no
+caller yet — there's no `WRITE_FILE`/`MODIFY_FILE` action for it to serve.
+
 Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
-(needs "is this profile currently installed" tracking),
-backup/rollback, reports.
+(needs "is this profile currently installed" tracking), reports.
