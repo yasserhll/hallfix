@@ -1,28 +1,39 @@
 # Changelog
 
-## Unreleased — post-v0.1.0: Fedora live-verification
+## v0.1.1
 
-No source code changes. Live-verified Hallfix's detection, compatibility
-classification, and plan-building against a genuine, unmodified Fedora
-Linux 44 filesystem (pulled directly from Docker Hub's registry API and
-run via an unprivileged `bwrap` sandbox, since this dev environment has
-no real Fedora machine and no working privileged container runtime).
-Confirmed correct: distribution/package-manager detection
-(`family=REDHAT`, `DNF`), `resolve_installation_strategy`/
-`assess_compatibility` (correctly `DETECTED_ONLY`, not `SUPPORTED`, for
-DEBIAN-only-declared tools), `Planner.plan_tool_install`, and
-`DnfManager.is_installed`/`get_version`/`check_lock` against the real
-`rpm`/`dnf` binaries. Real package *installation* could not be completed —
-confirmed to be a sandbox limitation (RPM's SELinux xattr writes are
-refused under an unprivileged bind mount), not a Hallfix defect, by
-reproducing the identical failure with a plain `dnf install`, no Hallfix
-code involved. No tool's `supported_distributions` was changed as a
-result, since the one thing that would justify that (real installation)
-is still unverified. Full account: `docs/release-audit.md`'s Fedora
-addendum. `README.md`'s "Supported systems"/"Known limitations" updated
-to reflect the more precise state.
+Tagged at explicit request, immediately after the work below landed on
+`main` — not gated on a further code fix. Two changes:
 
-## Unreleased — Phase 15: Documentation & Release Audit
+- **Fedora live-verification.** No source code changes. Live-verified
+  Hallfix's detection, compatibility classification, and plan-building
+  against a genuine, unmodified Fedora Linux 44 filesystem (pulled
+  directly from Docker Hub's registry API and run via an unprivileged
+  `bwrap` sandbox, since this dev environment has no real Fedora machine
+  and no working privileged container runtime). Confirmed correct:
+  distribution/package-manager detection (`family=REDHAT`, `DNF`),
+  `resolve_installation_strategy`/`assess_compatibility` (correctly
+  `DETECTED_ONLY`, not `SUPPORTED`, for DEBIAN-only-declared tools),
+  `Planner.plan_tool_install`, and `DnfManager.is_installed`/
+  `get_version`/`check_lock` against the real `rpm`/`dnf` binaries. Real
+  package *installation* could not be completed — confirmed to be a
+  sandbox limitation (RPM's SELinux xattr writes are refused under an
+  unprivileged bind mount), not a Hallfix defect, by reproducing the
+  identical failure with a plain `dnf install`, no Hallfix code involved.
+  No tool's `supported_distributions` was changed as a result, since the
+  one thing that would justify that (real installation) is still
+  unverified. Full account: `docs/release-audit.md`'s Fedora addendum.
+  `README.md`'s "Supported systems"/"Known limitations" updated to
+  reflect the more precise state.
+- **Version bump.** `pyproject.toml`'s `version` and
+  `src/hallfix/__init__.py`'s `__version__` (the latter is what `hallfix
+  version` actually prints) both moved `0.1.0` → `0.1.1` — these are two
+  independently-maintained sources of truth for the same number, which is
+  itself worth flagging: a future release should switch `__init__.py` to
+  read `importlib.metadata.version("hallfix")` instead, so there's one
+  source instead of two that can silently drift.
+
+## v0.1.0 — Phase 15: Documentation & Release Audit
 
 - Ran all six audits spec §Phase 15 requires (security, dependency, CLI,
   compatibility, documentation, test coverage) against the running code,
