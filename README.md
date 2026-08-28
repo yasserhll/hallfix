@@ -67,14 +67,24 @@ and — for MEDIUM risk and above — your confirmation. Dry-run
 
 ## Supported systems
 
-Actually verified so far: **Debian-family** (Ubuntu, Debian) via `apt`/`dpkg`.
-DNF/pacman/zypper adapters exist and are unit-tested against fakes, but
-haven't been live-verified on real Fedora/Arch/openSUSE systems yet — every
-tool definition honestly declares `supported_distributions: [DEBIAN]` for
-exactly this reason. Support level per tool is reported explicitly
-(`SUPPORTED` / `EXPERIMENTAL` / `DETECTED_ONLY` / `UNSUPPORTED`, via
-`hallfix tool info <id>`) — Hallfix never claims support it hasn't actually
-tested.
+Actually verified so far: **Debian-family** (Ubuntu, Debian) via `apt`/`dpkg`,
+real installs included.
+
+**Fedora**: detection, compatibility classification, and plan-building are
+live-verified against a real, unmodified Fedora Linux 44 filesystem
+(correct `family=REDHAT`, correct `DNF` resolution, correct real
+`is_installed`/`get_version`/`check_lock` via the genuine `rpm`/`dnf`
+binaries) — see `docs/release-audit.md`'s Fedora addendum. Real *package
+installation* on Fedora is still unverified (the dev sandbox used for this
+couldn't complete an actual `dnf install`, for reasons confirmed to be a
+sandbox limitation, not a Hallfix bug), so tool definitions still
+correctly declare `supported_distributions: [DEBIAN]` only — Hallfix
+never claims support for the one thing that's still actually unverified.
+
+Pacman/Zypper adapters exist and are unit-tested against fakes, but have
+had no live verification at all yet (real or containerized). Support
+level per tool is reported explicitly (`SUPPORTED` / `EXPERIMENTAL` /
+`DETECTED_ONLY` / `UNSUPPORTED`, via `hallfix tool info <id>`).
 
 ## Known limitations
 
@@ -85,9 +95,10 @@ found/confirmed each of these):
 - `--language fr` is accepted and validated but nothing is actually
   translated yet — spec-compliant ("prepare architecture for English/
   French... do not over-engineer translation in the MVP"), not a bug.
-- DNF/Pacman/Zypper package manager adapters are implemented and unit-
-  tested against fakes, but have never run against a real Fedora/Arch/
-  openSUSE host — see [Supported systems](#supported-systems).
+- Pacman/Zypper package manager adapters are implemented and unit-tested
+  against fakes, but have never run against real hardware or a container
+  — see [Supported systems](#supported-systems). DNF is partially
+  live-verified (detection/compatibility/planning, not installation).
 - `profile remove` doesn't exist yet (needs "is this profile currently
   installed" tracking).
 - The `OFFICIAL_REPOSITORY`/`SIGNED_BINARY` installation strategies are

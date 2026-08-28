@@ -242,3 +242,62 @@ No item in spec §80 is unmet. Items with a narrower scope than a literal
 reading might suggest (rollback, backup, offline diagnostics) are exactly
 as narrow as they honestly need to be, and every phase's own status note
 already said so before this audit.
+
+## Addendum: Fedora live-verification (post-release, v0.1.0 → v0.1.1)
+
+Requested after the v0.1.0 tag. This dev sandbox has no real Fedora
+machine, no Docker/Podman, and `sudo` has no controlling terminal
+anywhere in it (confirmed by both the assistant and the repo owner
+running the install command directly), so a real privileged container
+runtime could not be installed. What was actually done instead:
+
+A genuine, unmodified **Fedora Linux 44 (Container Image)** root
+filesystem was pulled directly from Docker Hub's registry API (`curl` +
+manual manifest/blob fetch — no `docker`/`podman` binary involved) and
+extracted locally. Real command execution against it used `bwrap`
+(bubblewrap, already present on this host) with an unprivileged user
+namespace (`--unshare-user --uid 0 --gid 0`) — genuinely isolated, not a
+simulation.
+
+**Verified working, for real, against that filesystem:**
+
+- `SystemDetector` (unmodified, pointed at the Fedora root): correctly
+  detected `distribution.id="fedora"`, `distribution.family=REDHAT`,
+  `version_id="44"`, `package_manager.kind=DNF` at the correct binary
+  path.
+- `resolve_installation_strategy`/`assess_compatibility`: correctly
+  resolved `DNF` as the native strategy for `htop`/`git`/`docker` and
+  `PIP` for `black`; correctly classified `htop`/`git`/`docker` as
+  `DETECTED_ONLY` (declared `[DEBIAN]` only, so *not* claimed supported
+  just because DNF was recognized — the exact spec §84 behavior this
+  project has insisted on since Phase 4) and `black` as `EXPERIMENTAL`.
+- `Planner.plan_tool_install`: built a correct real plan for `htop`
+  (package `htop`, strategy `DNF`, `LOW` risk) against the real Fedora
+  context.
+- `DnfManager.is_installed`/`get_version`/`check_lock`: run for real
+  (via `bwrap`, invoking the genuine `rpm`/`dnf` binaries shipped in that
+  Fedora image) — correct true/false results for an installed vs.
+  nonexistent package, correct version string (`6.0.2-1.fc44` for `rpm`
+  itself), correct "not locked" result.
+
+**Not verified — a real, hit-and-confirmed environment limitation, not a
+Hallfix defect:** actual package *installation* (`dnf install`). RPM's
+payload unpacking needs to write SELinux security-context extended
+attributes, which an unprivileged bind-mount inside this sandbox refuses
+(`cpio: symlink failed - Permission denied` / `open failed - No such
+file or directory`) — confirmed by reproducing the identical failure with
+a **plain `dnf install htop`**, no Hallfix code involved at all, so this
+is unambiguously a sandbox constraint, not a Hallfix bug. `DnfManager.search`
+also wasn't completed — it needs a metadata refresh that didn't finish
+within this sandbox's constrained (IPv6-broken) network before timing
+out; not attempted further since it doesn't bear on the install-path
+question.
+
+**Net effect:** Hallfix's Fedora *detection, compatibility classification,
+and plan-building* are now genuinely confirmed correct against a real,
+unmodified Fedora 44 filesystem — this is real evidence, not an
+extrapolation from the fake-system unit-test fixtures. Real *installation*
+on Fedora remains unverified, honestly, exactly as `README.md`'s Known
+Limitations section already said before this addendum — no tool's
+`supported_distributions` was changed, since upgrading that claim would
+require verifying the one thing that's still actually unverified.

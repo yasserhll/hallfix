@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — post-v0.1.0: Fedora live-verification
+
+No source code changes. Live-verified Hallfix's detection, compatibility
+classification, and plan-building against a genuine, unmodified Fedora
+Linux 44 filesystem (pulled directly from Docker Hub's registry API and
+run via an unprivileged `bwrap` sandbox, since this dev environment has
+no real Fedora machine and no working privileged container runtime).
+Confirmed correct: distribution/package-manager detection
+(`family=REDHAT`, `DNF`), `resolve_installation_strategy`/
+`assess_compatibility` (correctly `DETECTED_ONLY`, not `SUPPORTED`, for
+DEBIAN-only-declared tools), `Planner.plan_tool_install`, and
+`DnfManager.is_installed`/`get_version`/`check_lock` against the real
+`rpm`/`dnf` binaries. Real package *installation* could not be completed —
+confirmed to be a sandbox limitation (RPM's SELinux xattr writes are
+refused under an unprivileged bind mount), not a Hallfix defect, by
+reproducing the identical failure with a plain `dnf install`, no Hallfix
+code involved. No tool's `supported_distributions` was changed as a
+result, since the one thing that would justify that (real installation)
+is still unverified. Full account: `docs/release-audit.md`'s Fedora
+addendum. `README.md`'s "Supported systems"/"Known limitations" updated
+to reflect the more precise state.
+
 ## Unreleased — Phase 15: Documentation & Release Audit
 
 - Ran all six audits spec §Phase 15 requires (security, dependency, CLI,
