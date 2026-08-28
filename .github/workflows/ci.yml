@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same branch/PR instead of letting them
+# pile up and race each other.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: mypy
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      # Runs as the unprivileged `runner` user, same as every unit test
+      # requires (spec §72: CI must not require root). Includes the
+      # integration suite too — every test in it is deliberately
+      # read-only or dry-run only, so it's safe to run for real here.
+      - run: pytest -v
+
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install build
+      - run: python -m build
+      # A real, cheap smoke test that the built wheel actually works —
+      # install it into a fresh venv (not editable) and run the CLI, the
+      # same check that caught this project's packaging assumptions
+      # needed verifying by hand before this workflow existed.
+      - run: |
+          python -m venv /tmp/verify-venv
+          /tmp/verify-venv/bin/pip install dist/*.whl
+          /tmp/verify-venv/bin/hallfix version
+          XDG_CONFIG_HOME=/tmp/verify-state XDG_STATE_HOME=/tmp/verify-state \
+            /tmp/verify-venv/bin/hallfix tool list
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

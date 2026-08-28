@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased — Phase 14: Packaging & CI
+
+- Actually built the package and verified it, rather than trusting the
+  `pyproject.toml` config: `python -m build`, inspected the wheel's
+  contents, then installed it into a completely fresh (non-editable) venv
+  and confirmed `hallfix version`/`hallfix tool list` work — the tool/
+  profile YAML data does ship correctly via hatchling's default
+  git-tracked-file inclusion. (A first verification pass wrongly
+  suggested otherwise — a bug in my own check command, a `grep -E
+  "\.yaml$"` anchor that could never match `zipfile -l`'s
+  filename-then-columns output — corrected by testing further rather
+  than trusting the first result or leaving a needless `force-include`
+  behind.)
+- Found and fixed a real CI-fragility bug while auditing for exactly this
+  class of issue: three integration tests assumed `docker` was *not*
+  pre-installed (true on this dev sandbox, false on GitHub Actions'
+  `ubuntu-latest`, which ships Docker pre-installed for container
+  actions). Made all three robust to either real host state, matching
+  the pattern already established in Phase 10 for the same class of
+  problem — caught by review before CI ever ran, not by a failed run.
+- `.github/workflows/ci.yml`: lint, format check, strict type check, full
+  test suite (unit + integration — every integration test is read-only or
+  `--dry-run` only, so running the real suite in CI is safe) across Python
+  3.11/3.12/3.13, then a package build with a real install-and-run smoke
+  test (fresh venv, not editable — the same check that verified the wheel
+  above). Runs as the unprivileged `runner` user throughout (spec §72: CI
+  must not require root).
+- `.github/workflows/release.yml`: triggered by a version tag, re-runs
+  the full quality gate, builds, verifies the wheel installs and runs,
+  then publishes to a GitHub Release using only the built-in
+  `GITHUB_TOKEN`. Deliberately does not publish to PyPI — that needs a
+  human to provision an account/trusted-publisher config, not something
+  to wire up unasked (spec §74: don't implement every packaging format
+  in the MVP, don't promote `curl | sh` before there's a mature
+  mechanism).
+- Added `classifiers`/`[project.urls]` to `pyproject.toml`; `build` as a
+  dev dependency.
+- Rewrote `README.md`, which had been stale since Phase 1 (still said
+  "not yet functional beyond `hallfix version`" through 13 completed
+  phases) — a real problem to catch before any release, not just
+  cosmetic. Added `docs/installation.md` (spec §73, never written until
+  now).
+
 ## Unreleased — Phase 13: Remaining Profiles
 
 - Purely data-driven: no new Python — the registry/Planner/Executor

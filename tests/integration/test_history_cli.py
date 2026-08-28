@@ -37,11 +37,17 @@ def test_history_show_unknown_id_fails_cleanly() -> None:
 
 
 def test_dry_run_install_is_recorded_and_shown() -> None:
+    # Whether docker is already present depends on the real host (e.g.
+    # GitHub Actions' ubuntu-latest ships Docker pre-installed) — if so,
+    # the no-op path records dry_run=False regardless of --dry-run (spec:
+    # nothing happened either way), so "dry-run" only appears when docker
+    # was genuinely absent. Both outcomes are valid; check accordingly.
     dry_run_result = runner.invoke(app, ["--dry-run", "tool", "install", "docker"])
     assert dry_run_result.exit_code == 0
 
     history_result = runner.invoke(app, ["history"])
-    assert "dry-run" in history_result.stdout
+    if "already installed" not in dry_run_result.stdout.lower():
+        assert "dry-run" in history_result.stdout
 
     # find the assigned id from the JSON listing to check `history show`
     json_result = runner.invoke(app, ["--json", "history"])

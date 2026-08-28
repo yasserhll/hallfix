@@ -10,11 +10,28 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Hallfix Contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Systems Administration",
+]
 dependencies = [
     "typer>=0.12",
     "rich>=13.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yasserhll/hallfix"
+Issues = "https://github.com/yasserhll/hallfix/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -23,6 +40,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.10",
     "types-pyyaml>=6.0",
+    "build>=1.2",
 ]
 
 [project.scripts]

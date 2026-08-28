@@ -51,13 +51,16 @@ def test_custom_profile_without_tools_fails_cleanly() -> None:
 
 
 def test_dry_run_custom_profile_with_tools_shows_plan() -> None:
-    # docker is not installed on the CI/dev host at this point in the
-    # suite (see test_tool_install_cli.py) — picking an uninstalled,
-    # natively-resolvable tool so the plan actually contains an action
-    # instead of taking the no-op short-circuit like git/curl would.
+    # Whether docker is already present depends on the real host (e.g.
+    # GitHub Actions' ubuntu-latest ships Docker pre-installed, unlike a
+    # typical dev machine) — both outcomes are valid; only the invariant
+    # that holds either way ("no changes were made") is worth asserting
+    # unconditionally.
     result = runner.invoke(app, ["--dry-run", "profile", "install", "custom", "--tools", "docker"])
     assert result.exit_code == 0
-    assert "HALLFIX EXECUTION PLAN" in result.stdout
+    assert "No changes were made." in result.stdout
+    if "already installed" not in result.stdout.lower():
+        assert "HALLFIX EXECUTION PLAN" in result.stdout
 
 
 def test_profile_install_unknown_profile_fails_cleanly() -> None:

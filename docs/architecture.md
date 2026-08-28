@@ -162,3 +162,18 @@ built in Phases 4/8. 26 tools and 7 profiles total.
 Not yet implemented: `profile remove` (needs "is this profile currently
 installed" tracking); GPU detection (referenced by spec §33's Data/AI
 profile vision, never built in Phase 2/9).
+
+## Phase 14 status
+
+Implemented: `.github/workflows/ci.yml` (lint/format/type-check/full test
+suite across Python 3.11–3.13/package build with an install smoke test)
+and `.github/workflows/release.yml` (tag-triggered, GitHub Release only —
+no PyPI publish yet, see `docs/installation.md`). Package build verified
+by hand (built a wheel, installed it into a fresh non-editable venv,
+confirmed it runs) before trusting the CI job to do the same automatically.
+`docs/installation.md` added; `README.md` brought current after being
+stale since Phase 1.
+
+Not yet implemented: PyPI/`.deb`/`.rpm`/AUR/Homebrew distribution (spec
+§74 explicitly defers these — each needs real, human-provisioned
+accounts/credentials); `profile remove`; GPU detection.
