@@ -2,8 +2,9 @@
 
 **Hallfix — Safe, cross-distribution Linux system doctor and professional environment manager.**
 
-> Status: active development, Phases 1–13 of 15 complete (through
-> Packaging & CI). See [Development Phases](#development-phases) below.
+> Status: all 15 planned phases complete, including the Phase 15 release
+> audit. See [Development Phases](#development-phases) below and
+> [`docs/release-audit.md`](docs/release-audit.md) for the audit itself.
 
 ## What Hallfix is
 
@@ -75,6 +76,27 @@ exactly this reason. Support level per tool is reported explicitly
 `hallfix tool info <id>`) — Hallfix never claims support it hasn't actually
 tested.
 
+## Known limitations
+
+Honestly scoped gaps, collected in one place (see
+[`docs/release-audit.md`](docs/release-audit.md) for the full audit that
+found/confirmed each of these):
+
+- `--language fr` is accepted and validated but nothing is actually
+  translated yet — spec-compliant ("prepare architecture for English/
+  French... do not over-engineer translation in the MVP"), not a bug.
+- DNF/Pacman/Zypper package manager adapters are implemented and unit-
+  tested against fakes, but have never run against a real Fedora/Arch/
+  openSUSE host — see [Supported systems](#supported-systems).
+- `profile remove` doesn't exist yet (needs "is this profile currently
+  installed" tracking).
+- The `OFFICIAL_REPOSITORY`/`SIGNED_BINARY` installation strategies are
+  declared in the domain model (for the trust-priority ranking) but the
+  Planner refuses to build an executable plan for them — every real
+  install currently goes through a native package manager only.
+- No automated dependency-vulnerability scan (e.g. `pip-audit`) has been
+  run against the three runtime dependencies.
+
 ## Architecture overview
 
 Layered: CLI → Application (Planner/Executor/Doctor/ReportGenerator) →
@@ -95,7 +117,7 @@ with an install smoke test on every push — see
 
 Hallfix is built incrementally; each phase is implemented, tested, linted,
 and type-checked before the next begins (see `CHANGELOG.md` for what
-shipped in each). Complete: Foundation, Detection, Package Managers, Tool
-Registry, Planning Engine, Executor, State & History, Profiles, Doctor,
-Safe Fixes, Backup & Rollback, Reports, Remaining Profiles, Packaging & CI.
-Remaining: Documentation & Release Audit.
+shipped in each). All 15 complete: Foundation, Detection, Package
+Managers, Tool Registry, Planning Engine, Executor, State & History,
+Profiles, Doctor, Safe Fixes, Backup & Rollback, Reports, Remaining
+Profiles, Packaging & CI, Documentation & Release Audit.

@@ -177,3 +177,22 @@ stale since Phase 1.
 Not yet implemented: PyPI/`.deb`/`.rpm`/AUR/Homebrew distribution (spec
 §74 explicitly defers these — each needs real, human-provisioned
 accounts/credentials); `profile remove`; GPU detection.
+
+## Phase 15 status
+
+The final phase: no new features, six audits (security, dependency, CLI,
+compatibility, documentation, test coverage) against the actual code, not
+against what the docs claimed. Full findings in
+[`docs/release-audit.md`](release-audit.md). Net effect: two dead
+exception classes removed (`CommandExecutionError`, `SafetyPolicyViolation`
+— declared, never raised anywhere); 24 new unit/integration tests closing
+real coverage gaps (`cli/rendering.py`, `cli/commands/plan.py`,
+`cli/commands/history.py`, `cli/commands/network.py` — which had no
+dedicated test file at all before this phase — and
+`infrastructure/package_managers/zypper.py`), raising overall coverage
+90% → 92%; `docs/security.md` item 4 clarified to state plainly that no
+non-native installation strategy is executable yet, so there's no live
+code path needing its own checksum/signature verification beyond what
+`apt`/`dnf`/`pacman`/`zypper` already do; a "Known limitations" section
+added to `README.md` collecting every honestly-scoped gap in one place
+instead of leaving them scattered across phase notes.

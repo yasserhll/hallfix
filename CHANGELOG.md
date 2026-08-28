@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased — Phase 15: Documentation & Release Audit
+
+- Ran all six audits spec §Phase 15 requires (security, dependency, CLI,
+  compatibility, documentation, test coverage) against the running code,
+  not against what earlier phase notes claimed. Full write-up:
+  `docs/release-audit.md`.
+- Removed two dead exception classes (`CommandExecutionError`,
+  `SafetyPolicyViolation`) found never raised or caught anywhere in
+  `src/` or `tests/` — leftovers from before the codebase settled on
+  structured results (`CommandResult`, `PolicyDecision`) instead of
+  exceptions for these cases.
+- Added 24 tests closing real coverage gaps found during the audit:
+  `cli/rendering.py` (62% → 100%, was never exercised with a non-noop
+  plan or a failed/verified action), `cli/commands/plan.py` (78% → 100%,
+  the MEDIUM+-risk confirmation notice was host-state-dependent and
+  untested), `cli/commands/history.py` (85% → 98%, no test ever seeded a
+  failed outcome), `cli/commands/network.py` (89% → 98% — this command
+  group had **no dedicated test file at all** before this phase), and
+  `infrastructure/package_managers/zypper.py` (67% → 88%, thinner test
+  file than the other three adapters). Overall line coverage: 90% → 92%.
+  Documented, rather than papered over, the one coverage gap left
+  deliberately open: `cli/commands/fix.py`/`rollback.py`'s real-execution
+  branches, which are only reachable by a real system mutation (forbidden
+  in this project's tests) or a cross-module DI refactor out of scope for
+  an audit phase — every component those branches call is independently
+  tested at 95–100%, so the gap is in argument plumbing, not logic.
+- Clarified `docs/security.md` item 4: the trust-priority install-strategy
+  order is implemented, but the Planner refuses to execute any non-native
+  strategy, so there's currently no live code path needing its own
+  checksum/signature verification — real installs already go through
+  `apt`/`dnf`/`pacman`/`zypper`, which verify signatures themselves.
+- Added a "Known limitations" section to `README.md` collecting every
+  honestly-scoped gap (the `--language fr` no-op, unverified DNF/Pacman/
+  Zypper, missing `profile remove`, unexecutable `OFFICIAL_REPOSITORY`/
+  `SIGNED_BINARY` strategies, no dependency-vulnerability scan run) in one
+  place instead of leaving them scattered across per-phase notes.
+- Cross-checked spec §80's Definition of Done item by item against the
+  actual implementation — no unmet item found.
+
 ## Unreleased — Phase 14: Packaging & CI
 
 - Fixed a real bug the CI run itself caught on its first execution: 9

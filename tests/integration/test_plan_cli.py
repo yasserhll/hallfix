@@ -39,3 +39,15 @@ def test_plan_refresh_runs() -> None:
 def test_plan_install_unknown_tool_fails_cleanly() -> None:
     result = runner.invoke(app, ["plan", "install", "not-a-real-tool"])
     assert result.exit_code == 1
+
+
+def test_plan_remove_git_runs() -> None:
+    result = runner.invoke(app, ["plan", "remove", "git"])
+    assert result.exit_code == 0
+    assert "HALLFIX EXECUTION PLAN" in result.stdout
+    assert "No changes were made." in result.stdout
+
+
+def test_plan_remove_unknown_tool_fails_cleanly() -> None:
+    result = runner.invoke(app, ["plan", "remove", "not-a-real-tool"])
+    assert result.exit_code == 1
