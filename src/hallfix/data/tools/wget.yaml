@@ -1,0 +1,27 @@
+id: wget
+name: wget
+description: Command-line utility for downloading files.
+category: essentials
+profiles: [network-engineer, developer, devops]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: wget
+  DNF: wget
+  PACMAN: wget
+  ZYPPER: wget
+
+verification:
+  executable: wget
+  version_command: [wget, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

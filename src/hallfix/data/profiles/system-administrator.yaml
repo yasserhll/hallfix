@@ -1,0 +1,7 @@
+# "systemd utilities"/"journaling" (spec §32) need no package — journalctl
+# ships with systemd itself; nothing to install there.
+id: system-administrator
+name: System Administrator
+description: System administration, monitoring, and backup utilities.
+categories: [essentials, utilities, backup]
+tools: [git, curl, ssh, rsync, tmux, htop, jq, lsof]

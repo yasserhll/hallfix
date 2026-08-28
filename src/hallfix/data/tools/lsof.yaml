@@ -1,0 +1,27 @@
+id: lsof
+name: lsof
+description: Lists open files and the processes using them.
+category: system-analysis
+profiles: [cybersecurity, system-administrator]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: lsof
+  DNF: lsof
+  PACMAN: lsof
+  ZYPPER: lsof
+
+verification:
+  executable: lsof
+  version_command: [lsof, -v]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

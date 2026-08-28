@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased — Phase 13: Remaining Profiles
+
+- Purely data-driven: no new Python — the registry/Planner/Executor
+  infrastructure from Phases 4/8 already handles this. 17 new tool
+  definitions (`wireshark`, `tcpdump`, `lsof`, `strace`, `binutils`,
+  `iproute2`, `traceroute`, `mtr`, `ethtool`, `dig`, `wget`, `rsync`,
+  `nodejs`, `php`, `composer`, `postgresql-client`, `jupyter`) and 5
+  profiles: Cybersecurity, Network Engineer, System Administrator,
+  Data/AI, Full Stack Developer.
+- Cybersecurity: tools only, no automation of scanning/exploitation/
+  brute-force/credential-collection/remote-attacks — Hallfix prepares
+  tools, never performs offensive actions (spec §30).
+- Data/AI: GPU detection/CUDA guidance from the full spec vision (§33)
+  isn't implemented — there's no GPU detector (never built in Phase 2/9)
+  — documented honestly in the profile file rather than silently omitted.
+- Handled real per-manager package-name differences rather than assuming
+  uniform naming: Fedora's `iproute2` package is actually named
+  `iproute`; Debian/Ubuntu's CLI-only `mtr` build is packaged as
+  `mtr-tiny`; `dig` comes from a different package on every single
+  manager (`dnsutils`/`bind-utils`/`bind`/`bind-utils`). All three
+  verified with targeted regression tests, not just "loads without
+  error."
+- Renamed the Full Stack profile's id from an initial `full-stack` to
+  `full-stack-developer` mid-implementation — `python3.yaml` (Phase 4)
+  had already anticipated that exact name in its informational
+  `profiles:` metadata; matched it rather than leaving an inconsistency.
+- Verified against the real host, not just fixtures: `profile diff
+  network-engineer` correctly found 7 of 8 tools already present with
+  accurate versions and correctly flagged `traceroute` as the one
+  missing tool; `--dry-run profile install cybersecurity` correctly
+  planned to install only `wireshark`, the one genuinely absent tool.
+
 ## Unreleased — Phase 12: Reports
 
 - Mostly an aggregation phase, not new detection: `domain/models/report.py`

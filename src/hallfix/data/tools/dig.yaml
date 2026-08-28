@@ -1,0 +1,27 @@
+id: dig
+name: dig
+description: DNS lookup utility (part of bind-utils/dnsutils).
+category: network
+profiles: [network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: dnsutils
+  DNF: bind-utils
+  PACMAN: bind
+  ZYPPER: bind-utils
+
+verification:
+  executable: dig
+  version_command: [dig, -v]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

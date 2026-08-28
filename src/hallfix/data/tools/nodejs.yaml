@@ -1,0 +1,27 @@
+id: nodejs
+name: Node.js
+description: JavaScript runtime, includes npm.
+category: languages
+profiles: [full-stack-developer, developer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: nodejs
+  DNF: nodejs
+  PACMAN: nodejs
+  ZYPPER: nodejs
+
+verification:
+  executable: node
+  version_command: [node, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

@@ -1,0 +1,27 @@
+id: binutils
+name: Binutils
+description: Binary analysis tools (objdump, nm, readelf, strings).
+category: system-analysis
+profiles: [cybersecurity]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: binutils
+  DNF: binutils
+  PACMAN: binutils
+  ZYPPER: binutils
+
+verification:
+  executable: objdump
+  version_command: [objdump, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

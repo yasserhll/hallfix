@@ -1,0 +1,27 @@
+id: composer
+name: Composer
+description: Dependency manager for PHP.
+category: development
+profiles: [full-stack-developer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: composer
+  DNF: composer
+  PACMAN: composer
+  ZYPPER: composer
+
+verification:
+  executable: composer
+  version_command: [composer, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

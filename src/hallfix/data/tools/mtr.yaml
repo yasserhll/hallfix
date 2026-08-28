@@ -1,0 +1,27 @@
+id: mtr
+name: mtr
+description: Combines ping and traceroute into one diagnostic tool.
+category: network
+profiles: [network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: mtr-tiny
+  DNF: mtr
+  PACMAN: mtr
+  ZYPPER: mtr
+
+verification:
+  executable: mtr
+  version_command: [mtr, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

@@ -20,6 +20,61 @@ def test_default_registry_contains_expected_tools() -> None:
         assert tool_id in registry, f"expected tool {tool_id!r} in default registry"
 
 
+def test_default_registry_contains_phase13_tools() -> None:
+    registry = load_tool_registry()
+    for tool_id in (
+        "wireshark",
+        "tcpdump",
+        "lsof",
+        "strace",
+        "binutils",
+        "iproute2",
+        "traceroute",
+        "mtr",
+        "ethtool",
+        "dig",
+        "wget",
+        "rsync",
+        "nodejs",
+        "php",
+        "composer",
+        "postgresql-client",
+        "jupyter",
+    ):
+        assert tool_id in registry, f"expected tool {tool_id!r} in default registry"
+
+
+def test_jupyter_uses_pip_strategy_only() -> None:
+    registry = load_tool_registry()
+    jupyter = registry.require("jupyter")
+    assert jupyter.installation_strategies == (InstallationStrategy.PIP,)
+
+
+def test_iproute2_dnf_package_name_differs_from_others() -> None:
+    """Fedora's package is named "iproute", not "iproute2" like everywhere else."""
+    registry = load_tool_registry()
+    tool = registry.require("iproute2")
+    assert tool.package_mappings[InstallationStrategy.DNF] == "iproute"
+    assert tool.package_mappings[InstallationStrategy.APT] == "iproute2"
+
+
+def test_mtr_apt_package_name_differs_from_others() -> None:
+    """Debian/Ubuntu ship the CLI-only build as "mtr-tiny"."""
+    registry = load_tool_registry()
+    tool = registry.require("mtr")
+    assert tool.package_mappings[InstallationStrategy.APT] == "mtr-tiny"
+    assert tool.package_mappings[InstallationStrategy.DNF] == "mtr"
+
+
+def test_dig_package_name_differs_across_every_manager() -> None:
+    registry = load_tool_registry()
+    tool = registry.require("dig")
+    assert tool.package_mappings[InstallationStrategy.APT] == "dnsutils"
+    assert tool.package_mappings[InstallationStrategy.DNF] == "bind-utils"
+    assert tool.package_mappings[InstallationStrategy.PACMAN] == "bind"
+    assert tool.package_mappings[InstallationStrategy.ZYPPER] == "bind-utils"
+
+
 def test_black_uses_pip_strategy_only() -> None:
     registry = load_tool_registry()
     black = registry.require("black")

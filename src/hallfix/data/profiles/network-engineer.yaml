@@ -1,0 +1,5 @@
+id: network-engineer
+name: Network Engineer
+description: Network configuration, diagnostics, and troubleshooting tools.
+categories: [network]
+tools: [iproute2, traceroute, dig, ethtool, mtr, wget, curl, tcpdump]

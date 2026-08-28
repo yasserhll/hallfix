@@ -1,0 +1,27 @@
+id: iproute2
+name: iproute2
+description: Modern Linux network configuration tools (ip, ss).
+category: network
+profiles: [network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: iproute2
+  DNF: iproute
+  PACMAN: iproute2
+  ZYPPER: iproute2
+
+verification:
+  executable: ip
+  version_command: [ip, -V]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

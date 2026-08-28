@@ -151,5 +151,14 @@ diagnostics, `StateStore`, `HistoryStore`; no new detection logic),
 `dataclasses.asdict` pattern), and `hallfix report
 [--format txt|json|html] [--output path]`.
 
-Not yet implemented (later phases, see `CHANGELOG.md`): `profile remove`
-(needs "is this profile currently installed" tracking).
+## Phase 13 status
+
+Implemented: 5 additional profiles (Cybersecurity, Network Engineer,
+System Administrator, Data/AI, Full Stack Developer) and their 17
+supporting tool definitions under `src/hallfix/data/`. No new Python —
+purely data, using the registry/Planner/Executor infrastructure already
+built in Phases 4/8. 26 tools and 7 profiles total.
+
+Not yet implemented: `profile remove` (needs "is this profile currently
+installed" tracking); GPU detection (referenced by spec §33's Data/AI
+profile vision, never built in Phase 2/9).

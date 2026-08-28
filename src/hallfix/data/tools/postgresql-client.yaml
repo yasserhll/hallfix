@@ -1,0 +1,27 @@
+id: postgresql-client
+name: PostgreSQL Client
+description: Command-line client for PostgreSQL (psql).
+category: database
+profiles: [full-stack-developer, devops]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: postgresql-client
+  DNF: postgresql
+  PACMAN: postgresql
+  ZYPPER: postgresql
+
+verification:
+  executable: psql
+  version_command: [psql, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

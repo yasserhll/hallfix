@@ -1,0 +1,28 @@
+# No native package on any distro that reliably tracks upstream Jupyter —
+# same reasoning as black.yaml: a language-ecosystem-only tool, so
+# supported_distributions is intentionally empty (EXPERIMENTAL, not
+# SUPPORTED, since no per-distro claim is made).
+id: jupyter
+name: Jupyter
+description: Interactive notebook environment for data science and AI.
+category: development
+profiles: [data-ai]
+dependencies: [python3]
+
+installation_strategies: [PIP]
+package_mappings:
+  PIP: jupyter
+
+verification:
+  executable: jupyter
+  version_command: [jupyter, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: []
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: false
+documentation_url: https://jupyter.org/documentation

@@ -1,0 +1,9 @@
+# GPU detection / CUDA guidance from the full spec vision (§33) isn't
+# implemented — Hallfix has no GPU detector (never built in Phase 2/9).
+# Never automatically installs CUDA or proprietary drivers; since no such
+# tool is defined here, nothing in this profile could do that anyway.
+id: data-ai
+name: Data / AI
+description: Python-based data science and AI development environment.
+categories: [languages, development]
+tools: [python3, git, jupyter, black]

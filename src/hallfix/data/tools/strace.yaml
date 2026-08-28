@@ -1,0 +1,27 @@
+id: strace
+name: strace
+description: Traces system calls and signals.
+category: system-analysis
+profiles: [cybersecurity]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: strace
+  DNF: strace
+  PACMAN: strace
+  ZYPPER: strace
+
+verification:
+  executable: strace
+  version_command: [strace, -V]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

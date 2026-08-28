@@ -1,0 +1,27 @@
+id: wireshark
+name: Wireshark
+description: Network protocol analyzer.
+category: network-analysis
+profiles: [cybersecurity, network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: wireshark
+  DNF: wireshark
+  PACMAN: wireshark-qt
+  ZYPPER: wireshark
+
+verification:
+  executable: wireshark
+  version_command: [wireshark, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

@@ -1,0 +1,5 @@
+id: full-stack-developer
+name: Full Stack Developer
+description: Combined web, backend, and database development environment.
+categories: [essentials, languages, containers, database]
+tools: [git, curl, python3, nodejs, php, composer, docker, postgresql-client]

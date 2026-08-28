@@ -1,0 +1,11 @@
+# Learning / administration / defense / authorized auditing / forensics /
+# CTF and lab environments — spec §30. Hallfix prepares tools; it never
+# performs offensive actions automatically (no scanning, exploitation,
+# brute force, credential collection, or remote attacks — ever, by any
+# command). Heavier forensic/defensive-auditing suites from the full
+# spec vision aren't implemented as tool definitions yet.
+id: cybersecurity
+name: Cybersecurity
+description: System and network analysis tools for learning, defense, and authorized auditing.
+categories: [network-analysis, system-analysis]
+tools: [wireshark, tcpdump, lsof, strace, binutils, curl, git]

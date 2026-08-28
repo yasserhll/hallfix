@@ -1,0 +1,27 @@
+id: traceroute
+name: traceroute
+description: Traces the network path to a host.
+category: network
+profiles: [network-engineer]
+dependencies: []
+
+installation_strategies: [APT, DNF, PACMAN, ZYPPER]
+package_mappings:
+  APT: traceroute
+  DNF: traceroute
+  PACMAN: traceroute
+  ZYPPER: traceroute
+
+verification:
+  executable: traceroute
+  version_command: [traceroute, --version]
+  version_regex: '(\d+\.\d+(?:\.\d+)?)'
+
+supported_distributions: [DEBIAN]
+supported_architectures: []
+minimum_version: null
+recommended_version: null
+optional: true
+risk_level: LOW
+requires_root: true
+documentation_url: null

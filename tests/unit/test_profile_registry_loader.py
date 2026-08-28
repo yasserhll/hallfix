@@ -16,7 +16,15 @@ def test_default_profile_registry_loads_without_error() -> None:
 
 def test_default_registry_contains_expected_profiles() -> None:
     registry = load_profile_registry()
-    for profile_id in ("developer", "devops"):
+    for profile_id in (
+        "developer",
+        "devops",
+        "cybersecurity",
+        "network-engineer",
+        "system-administrator",
+        "data-ai",
+        "full-stack-developer",
+    ):
         assert profile_id in registry
 
 
