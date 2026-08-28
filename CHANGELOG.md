@@ -2,6 +2,19 @@
 
 ## Unreleased — Phase 14: Packaging & CI
 
+- Fixed a real bug the CI run itself caught on its first execution: 9
+  tests across `test_capabilities.py`/`test_system_detector.py` asserted
+  `systemd`/`selinux` capability detection against fixture directories
+  under `tests/fake_systems/` (e.g. `ubuntu/run/systemd/system/`,
+  `fedora/sys/fs/selinux/`) that were empty on disk — and git does not
+  track empty directories, so they silently didn't exist after a fresh
+  checkout. Passed locally (447/447) only because this sandbox's working
+  tree still had those directories from when they were first created;
+  failed on all three CI Python versions against a real clone. Added
+  `.gitkeep` to all 46 empty fixture directories and verified the fix
+  against an actual fresh `git worktree` checkout (not just re-running
+  locally, which wouldn't have caught the same class of gap again) before
+  re-pushing.
 - Actually built the package and verified it, rather than trusting the
   `pyproject.toml` config: `python -m build`, inspected the wheel's
   contents, then installed it into a completely fresh (non-editable) venv
