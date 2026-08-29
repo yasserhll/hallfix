@@ -99,8 +99,6 @@ found/confirmed each of these):
   against fakes, but have never run against real hardware or a container
   — see [Supported systems](#supported-systems). DNF is partially
   live-verified (detection/compatibility/planning, not installation).
-- `profile remove` doesn't exist yet (needs "is this profile currently
-  installed" tracking).
 - The `OFFICIAL_REPOSITORY`/`SIGNED_BINARY` installation strategies are
   declared in the domain model (for the trust-priority ranking) but the
   Planner refuses to build an executable plan for them — every real

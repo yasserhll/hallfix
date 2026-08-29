@@ -66,3 +66,23 @@ def test_dry_run_custom_profile_with_tools_shows_plan() -> None:
 def test_profile_install_unknown_profile_fails_cleanly() -> None:
     result = runner.invoke(app, ["profile", "install", "not-a-real-profile"])
     assert result.exit_code != 0
+
+
+def test_profile_remove_runs_and_never_modifies() -> None:
+    # Real host, real StateStore: nothing here is Hallfix-managed, so every
+    # tool is skipped via notes rather than actually removed — exercises the
+    # full command path (real Planner/StateStore reads) without mutating
+    # anything.
+    result = runner.invoke(app, ["profile", "remove", "developer"])
+    assert result.exit_code == 0
+    assert "No changes were made." in result.stdout
+
+
+def test_profile_remove_unknown_profile_fails_cleanly() -> None:
+    result = runner.invoke(app, ["profile", "remove", "not-a-real-profile"])
+    assert result.exit_code != 0
+
+
+def test_profile_remove_custom_without_tools_fails_cleanly() -> None:
+    result = runner.invoke(app, ["profile", "remove", "custom"])
+    assert result.exit_code == 1

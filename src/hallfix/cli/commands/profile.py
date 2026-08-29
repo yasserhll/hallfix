@@ -1,12 +1,12 @@
 """``hallfix profile`` command group (spec §27/§35/§37).
 
-``install`` reuses the exact same Planner -> SafetyPolicy -> confirmation
--> Executor path as ``tool install`` — spec §35: custom profiles (and, by
-the same reasoning, every profile) must never get a second installation
-system. ``profile remove`` deliberately does not exist yet: spec §37's
-shared-dependency safety check ("Docker is also used by: Developer,
-DevOps") needs a notion of "is this profile currently considered
-installed" that Hallfix doesn't track yet — out of scope for this phase.
+``install``/``remove`` reuse the exact same Planner -> SafetyPolicy ->
+confirmation -> Executor path as ``tool install``/``tool remove`` — spec
+§35: custom profiles (and, by the same reasoning, every profile) must
+never get a second installation system. ``remove``'s shared-dependency
+safety check ("Docker is also used by: Developer, DevOps") lives in
+``Planner.plan_profile_remove``, driven by ``StateStore``'s
+``installed_for`` ownership record.
 """
 
 from __future__ import annotations
@@ -225,6 +225,104 @@ def install(
         command_runner=command_runner, tool_registry=tool_registry, state_store=StateStore()
     )
     result = executor.execute_plan(plan, dry_run=False, profile_id=profile.id)
+
+    history.append(
+        command=command_label,
+        plan_id=plan.id,
+        plan_description=plan.description,
+        dry_run=False,
+        plan_reversible=plan.reversible,
+        action_outcomes=build_action_outcomes(plan, result),
+    )
+
+    if cli_ctx is not None and cli_ctx.json_output:
+        typer.echo(json.dumps(dataclasses.asdict(result), default=str, indent=2))
+    else:
+        render_execution_result(console, result)
+
+    if not result.fully_succeeded:
+        raise typer.Exit(code=1)
+
+
+@app.command("remove")
+def remove(
+    ctx: typer.Context,
+    profile_id: str,
+    tools: str = typer.Option(
+        "", "--tools", help="Comma-separated tool ids (required for the 'custom' profile)."
+    ),
+) -> None:
+    """Remove a profile's Hallfix-managed tools, skipping any still shared
+    with another profile: Planner -> SafetyPolicy -> confirmation -> Executor.
+    """
+    if profile_id == "custom":
+        tool_ids = tuple(t.strip() for t in tools.split(",") if t.strip())
+        if not tool_ids:
+            typer.secho(
+                "The 'custom' profile requires --tools (comma-separated tool ids).",
+                fg=typer.colors.RED,
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        profile = ProfileDefinition(
+            id="custom", name="Custom", description="User-selected tools.", tools=tool_ids
+        )
+    else:
+        profile = _require_profile(_load_profile_registry(), profile_id)
+
+    cli_ctx = ctx.obj
+    tool_registry = _load_tool_registry()
+    system_context = _detect_system()
+    planner = Planner(command_runner=SubprocessCommandRunner())
+    state_store = StateStore()
+    plan = planner.plan_profile_remove(profile, tool_registry, system_context, state_store)
+
+    console = Console(no_color=cli_ctx.no_color if cli_ctx else False)
+    history = HistoryStore()
+    command_label = f"profile remove {profile_id}"
+
+    if plan.is_noop:
+        console.print(plan.description)
+        for note in plan.notes:
+            console.print(f"  - {note}")
+        console.print("No changes were made.")
+        history.append(
+            command=command_label,
+            plan_id=plan.id,
+            plan_description=plan.description,
+            dry_run=False,
+            plan_reversible=plan.reversible,
+        )
+        return
+
+    dry_run = bool(cli_ctx and cli_ctx.dry_run)
+    if dry_run:
+        render_plan_human(console, plan)
+        history.append(
+            command=command_label,
+            plan_id=plan.id,
+            plan_description=plan.description,
+            dry_run=True,
+            plan_reversible=plan.reversible,
+        )
+        return
+
+    decision = SafetyPolicy().evaluate_plan(plan)
+    outcome = resolve_confirmation(
+        plan, decision, yes=bool(cli_ctx and cli_ctx.yes), console=console
+    )
+    if not outcome.proceed:
+        typer.secho(outcome.reason or "Aborted.", fg=typer.colors.YELLOW, err=True)
+        raise typer.Exit(code=1)
+
+    running_as_root = system_context.sudo.running_as_root
+    command_runner = PrivilegedCommandRunner(
+        inner=SubprocessCommandRunner(), running_as_root=running_as_root
+    )
+    executor = Executor(
+        command_runner=command_runner, tool_registry=tool_registry, state_store=state_store
+    )
+    result = executor.execute_plan(plan, dry_run=False)
 
     history.append(
         command=command_label,

@@ -47,6 +47,7 @@ from hallfix.domain.registries.compatibility import (
 from hallfix.domain.registries.tool_registry import ToolRegistry
 from hallfix.infrastructure.commands.runner import CommandRunner
 from hallfix.infrastructure.package_managers.registry import create_package_manager
+from hallfix.infrastructure.state.store import StateStore
 from hallfix.utils.version import meets_minimum
 
 
@@ -161,6 +162,62 @@ class Planner:
         description = (
             f"Install {profile.name} profile: {len(planned)} to install, "
             f"{len(notes)} already satisfied or unavailable"
+        )
+        return ExecutionPlan(
+            id=self._id_factory(),
+            created_at=self._clock(),
+            description=description,
+            planned_actions=tuple(planned),
+            notes=tuple(notes),
+        )
+
+    def plan_profile_remove(
+        self,
+        profile: ProfileDefinition,
+        tool_registry: ToolRegistry,
+        context: SystemContext,
+        state_store: StateStore,
+    ) -> ExecutionPlan:
+        """Builds one plan removing this profile's Hallfix-managed tools.
+
+        Spec §37: "Never remove shared dependencies blindly" — a tool is
+        only planned for removal when Hallfix actually installed it (never
+        a pre-existing tool Hallfix merely observed) *and* no other profile
+        still claims it via ``StateStore``'s ``installed_for`` ownership
+        record. Reuses ``plan_tool_remove`` per surviving tool for the same
+        reason ``plan_profile_install`` reuses ``plan_tool_install`` — one
+        Planner path, never a second removal system.
+        """
+        planned: list[PlannedAction] = []
+        notes: list[str] = []
+
+        for tool_id in profile.tools:
+            tool = tool_registry.get(tool_id)
+            if tool is None:
+                notes.append(f"{tool_id}: unknown tool, skipped")
+                continue
+
+            tool_state = state_store.get_tool_state(tool_id)
+            if tool_state is None or not tool_state.installed_by_hallfix:
+                notes.append(f"{tool.name}: not installed by Hallfix, skipped")
+                continue
+
+            other_owners = tuple(p for p in tool_state.installed_for if p != profile.id)
+            if other_owners:
+                notes.append(
+                    f"{tool.name} is also used by: {', '.join(other_owners)}. Removal skipped."
+                )
+                continue
+
+            single_plan = self.plan_tool_remove(tool, context)
+            if single_plan.is_noop:
+                notes.append(f"{tool.name}: {single_plan.description}")
+                continue
+            planned.extend(single_plan.planned_actions)
+
+        description = (
+            f"Remove {profile.name} profile: {len(planned)} to remove, "
+            f"{len(notes)} skipped or already absent"
         )
         return ExecutionPlan(
             id=self._id_factory(),
