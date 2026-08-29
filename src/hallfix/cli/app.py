@@ -24,6 +24,7 @@ from hallfix.cli.commands import profile as profile_commands
 from hallfix.cli.commands import recommend as recommend_commands
 from hallfix.cli.commands import report as report_commands
 from hallfix.cli.commands import rollback as rollback_commands
+from hallfix.cli.commands import snapshot as snapshot_commands
 from hallfix.cli.commands import system as system_commands
 from hallfix.cli.commands import tool as tool_commands
 from hallfix.cli.context import CliContext
@@ -50,6 +51,7 @@ app.command("report")(report_commands.report)
 app.command("recommend")(recommend_commands.recommend)
 app.command("config")(config_commands.config)
 app.command("logs")(logs_commands.logs)
+app.command("snapshot")(snapshot_commands.snapshot)
 
 
 @app.callback()
