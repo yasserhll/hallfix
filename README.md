@@ -3,7 +3,9 @@
 **Hallfix — Safe, cross-distribution Linux system doctor and professional environment manager.**
 
 > Status: all 15 planned phases complete, including the Phase 15 release
-> audit. See [Development Phases](#development-phases) below and
+> audit, plus a full spec cross-check that closed every remaining CLI
+> gap (`recommend`, `profile remove`, `snapshot`, `update`, `config`,
+> `logs`). See [Development Phases](#development-phases) below and
 > [`docs/release-audit.md`](docs/release-audit.md) for the audit itself.
 
 ## What Hallfix is
@@ -42,12 +44,19 @@ pip install -e ".[dev]"
 ```bash
 hallfix system info                    # detected hardware/network/environment
 hallfix doctor                         # full system health check
+hallfix recommend                      # evidence-based profile suggestion, read-only
 hallfix tool list                      # browse the tool registry
 hallfix tool install git               # plan -> confirm -> install (dry-run: add --dry-run)
 hallfix profile list                   # developer, devops, cybersecurity, ...
 hallfix profile diff developer         # what's installed vs. missing, read-only
 hallfix profile install developer      # install a whole profile
+hallfix profile remove developer       # remove it (skips tools shared with other profiles)
+hallfix update system                  # full native package-manager upgrade
+hallfix update tools                   # update every Hallfix-managed tool
+hallfix snapshot                       # record a point-in-time Hallfix state snapshot
 hallfix history                        # what Hallfix has done
+hallfix logs                           # tail Hallfix's own structured log
+hallfix config                         # show the effective configuration
 hallfix rollback                       # undo the most recent reversible install
 hallfix repair                         # diagnose, then apply safe LOW-risk fixes
 hallfix report --format html --output report.html
@@ -103,8 +112,27 @@ found/confirmed each of these):
   declared in the domain model (for the trust-priority ranking) but the
   Planner refuses to build an executable plan for them — every real
   install currently goes through a native package manager only.
+- `hallfix update hallfix` (self-update) honestly reports itself as
+  unavailable rather than faking it — Hallfix has no packaging/
+  distribution channel yet (source install only). Update from source
+  with `git pull` + `pip install -e .`.
 - No automated dependency-vulnerability scan (e.g. `pip-audit`) has been
   run against the three runtime dependencies.
+
+## Documentation
+
+[`docs/installation.md`](docs/installation.md) ·
+[`docs/architecture.md`](docs/architecture.md) ·
+[`docs/security.md`](docs/security.md) ·
+[`docs/development.md`](docs/development.md) ·
+[`docs/profiles.md`](docs/profiles.md) ·
+[`docs/tools.md`](docs/tools.md) ·
+[`docs/diagnostics.md`](docs/diagnostics.md) ·
+[`docs/state.md`](docs/state.md) ·
+[`docs/rollback.md`](docs/rollback.md) ·
+[`docs/testing.md`](docs/testing.md) ·
+[`docs/troubleshooting.md`](docs/troubleshooting.md) ·
+[`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Architecture overview
 

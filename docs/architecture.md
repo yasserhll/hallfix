@@ -196,3 +196,43 @@ code path needing its own checksum/signature verification beyond what
 `apt`/`dnf`/`pacman`/`zypper` already do; a "Known limitations" section
 added to `README.md` collecting every honestly-scoped gap in one place
 instead of leaving them scattered across phase notes.
+
+## Post-release: spec completeness pass
+
+A full line-by-line cross-check of the master spec against the running
+code (post-`v0.1.2`) found six CLI-tree commands (spec §60) that were
+either explicitly documented as deferred or missing outright, with no
+functionality behind them at all. Closed all six, each through the
+existing architecture rather than a parallel path:
+
+- `hallfix recommend` (§41): reuses `compute_profile_diff` per profile
+  (domain/registries/recommendation.py), never a second installed/missing
+  algorithm.
+- `hallfix profile remove` (§37): `Planner.plan_profile_remove` reuses
+  `plan_tool_remove` per tool, gated on `StateStore`'s `installed_for`
+  ownership record — a tool is only planned for removal when Hallfix
+  installed it *and* no other profile still claims it.
+- `hallfix snapshot` (§10): new `domain/models/snapshot.py` +
+  `infrastructure/state/snapshot_store.py` (atomic JSON-per-snapshot,
+  same temp-file+replace pattern as `StateStore`/`HistoryStore`) +
+  `application/snapshot.py` to build one from real reads. Records
+  "relevant Hallfix state" (OS info, Hallfix-managed tools and their
+  versions, requesting profiles) — explicitly not a full filesystem
+  snapshot, per spec.
+- `hallfix update system`/`tools`/`hallfix` (§54): required adding
+  `PackageManager.upgrade()` to the interface itself (spec §19 listed it;
+  no adapter had implemented it) across all four adapters, a new
+  `UpgradeSystemAction`/`ActionType.UPGRADE_SYSTEM_PACKAGES` wired through
+  `RiskEvaluator` (MEDIUM, not reversible) and `Executor`, and
+  `Planner.plan_tool_update`/`plan_tools_update` (like install, but skips
+  the "already meets minimum" idempotence short-circuit — an update must
+  still re-run to pick up a newer version). `update hallfix` reports
+  self-update as honestly unavailable (no distribution channel exists
+  yet) rather than fabricating support, per spec §84.
+- `hallfix config`/`hallfix logs` (§57/§58): read-only views over
+  infrastructure that already existed (`ConfigurationManager`, the
+  structured JSON-lines logger) but had no command surface.
+
+Deliberately left out: the interactive menu on a bare `hallfix` invocation
+and the first-run wizard (spec §61/§63) — the spec's own wording for both
+is "may display", not a hard requirement, unlike every item above.
