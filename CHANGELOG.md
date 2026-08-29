@@ -1,5 +1,45 @@
 # Changelog
 
+## v0.2.0
+
+Full line-by-line cross-check of the master spec against the running code
+(prompted by an explicit request to verify completeness). Found and
+closed every remaining functional gap in the spec's CLI tree (§60) and
+required documentation set (§73), all through the existing architecture
+— no parallel/shortcut paths. Six new commands:
+
+- **`hallfix recommend`** (§41) — was MVP-listed (§75) but entirely
+  missing. Evidence-based, read-only; reuses `compute_profile_diff` per
+  profile.
+- **`hallfix profile remove`** (§37) — was an explicitly documented known
+  limitation. `Planner.plan_profile_remove` only removes a tool Hallfix
+  installed *and* that no other profile's `StateStore.installed_for`
+  still claims.
+- **`hallfix snapshot`** (§10) — new `SnapshotStore`
+  (atomic, one JSON file per snapshot) recording OS info, Hallfix-managed
+  tools/versions, and requesting profiles.
+- **`hallfix update system` / `update tools` / `update hallfix`** (§54) —
+  required adding `PackageManager.upgrade()` to the interface (spec §19
+  listed it; no adapter had it) across all four adapters, plus a new
+  `UpgradeSystemAction` (MEDIUM risk, not reversible) wired through
+  `RiskEvaluator`/`Executor`. `update hallfix` honestly reports
+  self-update as unavailable (no distribution channel exists) rather
+  than fabricating support (spec §84).
+- **`hallfix config`** / **`hallfix logs`** (§57/§58) — read-only views
+  over infrastructure (`ConfigurationManager`, the structured log file)
+  that already existed but had no command surface.
+
+Also added the 7 spec-required doc files (§73) that were missing:
+`docs/profiles.md`, `tools.md`, `diagnostics.md`, `state.md`,
+`rollback.md`, `testing.md`, `troubleshooting.md`.
+
+Deliberately not implemented: the interactive menu on a bare `hallfix`
+invocation and the first-run wizard (§61/§63) — the spec's own wording
+for both is "may display", not a hard requirement.
+
+62 new unit/integration tests added; 92% coverage maintained; all lint/
+format/type-check/test gates green throughout.
+
 ## v0.1.2
 
 - Fixed the two-independent-sources-of-truth version problem flagged in
