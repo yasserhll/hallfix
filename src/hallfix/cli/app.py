@@ -19,6 +19,7 @@ from hallfix.cli.commands import history as history_commands
 from hallfix.cli.commands import network as network_commands
 from hallfix.cli.commands import plan as plan_commands
 from hallfix.cli.commands import profile as profile_commands
+from hallfix.cli.commands import recommend as recommend_commands
 from hallfix.cli.commands import report as report_commands
 from hallfix.cli.commands import rollback as rollback_commands
 from hallfix.cli.commands import system as system_commands
@@ -44,6 +45,7 @@ app.command("repair")(fix_commands.repair)
 app.command("fix")(fix_commands.fix)
 app.command("rollback")(rollback_commands.rollback)
 app.command("report")(report_commands.report)
+app.command("recommend")(recommend_commands.recommend)
 
 
 @app.callback()
