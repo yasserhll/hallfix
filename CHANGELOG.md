@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.2
+
+- Fixed the two-independent-sources-of-truth version problem flagged in
+  v0.1.1: `src/hallfix/__init__.py` now derives `__version__` from
+  `importlib.metadata.version("hallfix")` (the installed package's own
+  metadata) instead of a second hardcoded string, so `pyproject.toml`'s
+  `version` is the only place a release number is set.
+
 ## v0.1.1
 
 Tagged at explicit request, immediately after the work below landed on
