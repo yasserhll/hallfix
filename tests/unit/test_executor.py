@@ -10,6 +10,7 @@ from hallfix.domain.planning.action import (
     InstallPackageAction,
     RemovePackageAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan, PlannedAction
 from hallfix.domain.registries.tool_registry import ToolRegistry
@@ -147,6 +148,17 @@ def test_execute_refresh() -> None:
     executor = Executor(command_runner=runner, tool_registry=registry)
     result = executor.execute_plan(_plan(action))
     assert result.fully_succeeded
+
+
+def test_execute_upgrade() -> None:
+    runner = FakeCommandRunner()
+    runner.stub(("apt-get", "upgrade", "-y"), ok_result(("apt-get", "upgrade", "-y"), "Upgraded"))
+    registry = ToolRegistry([])
+    action = UpgradeSystemAction(strategy=InstallationStrategy.APT)
+    executor = Executor(command_runner=runner, tool_registry=registry)
+    result = executor.execute_plan(_plan(action))
+    assert result.fully_succeeded
+    assert result.action_results[0].verification is None
 
 
 def test_failure_isolation_across_multiple_actions() -> None:

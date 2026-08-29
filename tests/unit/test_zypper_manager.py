@@ -60,6 +60,16 @@ def test_search_parses_pipe_delimited_table(tmp_path: Path) -> None:
     assert results[0].description == "Fast Version Control"
 
 
+def test_upgrade_success(tmp_path: Path) -> None:
+    runner = FakeCommandRunner()
+    runner.stub(
+        ("zypper", "--non-interactive", "update"),
+        ok_result(("zypper", "--non-interactive", "update"), "Nothing to do."),
+    )
+    result = _manager(runner, tmp_path).upgrade()
+    assert result.succeeded
+
+
 def test_repair_runs_verify(tmp_path: Path) -> None:
     runner = FakeCommandRunner()
     runner.stub(

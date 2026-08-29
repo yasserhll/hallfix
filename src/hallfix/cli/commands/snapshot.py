@@ -16,10 +16,36 @@ from rich.table import Table
 from hallfix.application.snapshot import build_snapshot
 from hallfix.detectors.system import SystemDetector
 from hallfix.domain.exceptions import RegistryError
+from hallfix.domain.models.snapshot import SnapshotRecord
+from hallfix.domain.models.system import SystemContext
 from hallfix.infrastructure.commands.runner import SubprocessCommandRunner
 from hallfix.infrastructure.registries.tool_registry_loader import load_tool_registry
 from hallfix.infrastructure.state.snapshot_store import SnapshotStore
 from hallfix.infrastructure.state.store import StateStore
+
+
+def _render(console: Console, record: SnapshotRecord, context: SystemContext, path: Path) -> None:
+    console.print(f"[bold]Snapshot {record.id}[/bold] saved to {path}")
+    console.print(
+        f"{context.distribution.pretty_name or context.distribution.id} "
+        f"({context.architecture}, kernel {context.kernel})"
+    )
+
+    if not record.managed_tools:
+        console.print("\nNo Hallfix-managed tools recorded yet.")
+        return
+
+    table = Table()
+    table.add_column("Tool")
+    table.add_column("Version")
+    table.add_column("Installed for")
+    for entry in record.managed_tools:
+        table.add_row(
+            entry.tool_id,
+            entry.installed_version or "unknown",
+            ", ".join(entry.installed_for) or "-",
+        )
+    console.print(table)
 
 
 def snapshot(ctx: typer.Context) -> None:
@@ -42,24 +68,4 @@ def snapshot(ctx: typer.Context) -> None:
         return
 
     console = Console(no_color=cli_ctx.no_color if cli_ctx else False)
-    console.print(f"[bold]Snapshot {record.id}[/bold] saved to {path}")
-    console.print(
-        f"{context.distribution.pretty_name or context.distribution.id} "
-        f"({context.architecture}, kernel {context.kernel})"
-    )
-
-    if not record.managed_tools:
-        console.print("\nNo Hallfix-managed tools recorded yet.")
-        return
-
-    table = Table()
-    table.add_column("Tool")
-    table.add_column("Version")
-    table.add_column("Installed for")
-    for entry in record.managed_tools:
-        table.add_row(
-            entry.tool_id,
-            entry.installed_version or "unknown",
-            ", ".join(entry.installed_for) or "-",
-        )
-    console.print(table)
+    _render(console, record, context, path)

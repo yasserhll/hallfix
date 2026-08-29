@@ -37,6 +37,7 @@ from hallfix.domain.planning.action import (
     RemovePackageAction,
     RepairPackageManagerAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan, PlannedAction
 from hallfix.domain.planning.risk_evaluator import RiskEvaluator
@@ -134,6 +135,77 @@ class Planner:
             description=f"Remove {tool.name} via {strategy.value} (package: {package})",
         )
         return self._build_plan(f"Remove {tool.name}", [planned])
+
+    def plan_tool_update(self, tool: ToolDefinition, context: SystemContext) -> ExecutionPlan:
+        """spec §54's ``hallfix update tools``, per tool: unlike
+        ``plan_tool_install``, this deliberately skips the "already meets
+        minimum_version, so it's a no-op" idempotence check — an update
+        should still re-run the install command to pick up a newer
+        available version even when the currently installed one is already
+        acceptable. Never installs a tool that isn't already present:
+        "update" must not silently turn into "install".
+        """
+        strategy = resolve_installation_strategy(tool, context)
+        if strategy is None or strategy not in NATIVE_INSTALLATION_STRATEGIES:
+            return self._empty_plan(
+                f"No usable installation strategy for {tool.name} on this system."
+            )
+
+        manager = create_package_manager(
+            context.package_manager.kind, command_runner=self._command_runner, root=self._root
+        )
+        if manager is None:  # pragma: no cover - guaranteed by resolve_installation_strategy
+            return self._empty_plan(f"No package manager available for {tool.name}.")
+
+        package = tool.package_mappings[strategy]
+        if not manager.is_installed(package):
+            return self._empty_plan(f"{tool.name} is not installed; nothing to update.")
+
+        action = InstallPackageAction(
+            tool_id=tool.id, package=package, strategy=strategy, tool_risk_level=tool.risk_level
+        )
+        risk = self._risk_evaluator.evaluate(action)
+        planned = PlannedAction(
+            action=action,
+            risk=risk,
+            description=f"Update {tool.name} via {strategy.value} (package: {package})",
+        )
+        return self._build_plan(f"Update {tool.name}", [planned])
+
+    def plan_tools_update(
+        self, tool_registry: ToolRegistry, context: SystemContext, state_store: StateStore
+    ) -> ExecutionPlan:
+        """Updates every tool Hallfix installed — spec §54: "Tool update" is
+        distinct from "System update", never mixed into one command.
+        """
+        planned: list[PlannedAction] = []
+        notes: list[str] = []
+        state = state_store.load()
+
+        for tool_id, tool_state in sorted(state.tools.items()):
+            if not tool_state.installed_by_hallfix:
+                continue
+            tool = tool_registry.get(tool_id)
+            if tool is None:
+                notes.append(f"{tool_id}: unknown tool, skipped")
+                continue
+            single_plan = self.plan_tool_update(tool, context)
+            if single_plan.is_noop:
+                notes.append(f"{tool.name}: {single_plan.description}")
+                continue
+            planned.extend(single_plan.planned_actions)
+
+        description = (
+            f"Update Hallfix-managed tools: {len(planned)} to update, "
+            f"{len(notes)} skipped or unavailable"
+        )
+        return ExecutionPlan(
+            id=self._id_factory(),
+            created_at=self._clock(),
+            description=description,
+            planned_actions=tuple(planned),
+            notes=tuple(notes),
+        )
 
     def plan_profile_install(
         self, profile: ProfileDefinition, tool_registry: ToolRegistry, context: SystemContext
@@ -240,6 +312,24 @@ class Planner:
             description=f"Refresh {native_strategy.value} package metadata",
         )
         return self._build_plan("Refresh package metadata", [planned])
+
+    def plan_system_upgrade(self, context: SystemContext) -> ExecutionPlan:
+        """spec §54's ``hallfix update system`` — a full native
+        package-manager upgrade, distinct from ``plan_refresh_metadata``
+        (which only refreshes indexes, never installs anything).
+        """
+        native_strategy = NATIVE_STRATEGY_BY_MANAGER.get(context.package_manager.kind)
+        if native_strategy is None:
+            return self._empty_plan("No native package manager detected on this system.")
+
+        action = UpgradeSystemAction(strategy=native_strategy)
+        risk = self._risk_evaluator.evaluate(action)
+        planned = PlannedAction(
+            action=action,
+            risk=risk,
+            description=f"Upgrade all packages via {native_strategy.value}",
+        )
+        return self._build_plan("Upgrade system packages", [planned])
 
     def plan_fix(self, fix: FixDefinition, context: SystemContext) -> ExecutionPlan:
         """Builds a plan for one fix — spec §43: always diagnose first, and a

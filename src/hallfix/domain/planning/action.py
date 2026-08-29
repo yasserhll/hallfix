@@ -23,6 +23,7 @@ class ActionType(StrEnum):
     REMOVE_PACKAGE = "REMOVE_PACKAGE"
     UPDATE_PACKAGE_INDEX = "UPDATE_PACKAGE_INDEX"
     REPAIR_PACKAGE_MANAGER = "REPAIR_PACKAGE_MANAGER"
+    UPGRADE_SYSTEM_PACKAGES = "UPGRADE_SYSTEM_PACKAGES"
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,11 +58,23 @@ class RepairPackageManagerAction:
     type: ActionType = field(default=ActionType.REPAIR_PACKAGE_MANAGER, init=False)
 
 
+@dataclass(frozen=True, slots=True)
+class UpgradeSystemAction:
+    """spec §54's ``hallfix update system`` — a full, native package-manager
+    upgrade (``apt-get upgrade`` / ``dnf upgrade`` / ``pacman -Syu`` /
+    ``zypper update``), distinct from ``UpdatePackageIndexAction`` (which
+    only refreshes metadata, never installs anything)."""
+
+    strategy: InstallationStrategy
+    type: ActionType = field(default=ActionType.UPGRADE_SYSTEM_PACKAGES, init=False)
+
+
 Action = (
     InstallPackageAction
     | RemovePackageAction
     | UpdatePackageIndexAction
     | RepairPackageManagerAction
+    | UpgradeSystemAction
 )
 
 

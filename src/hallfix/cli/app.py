@@ -27,6 +27,7 @@ from hallfix.cli.commands import rollback as rollback_commands
 from hallfix.cli.commands import snapshot as snapshot_commands
 from hallfix.cli.commands import system as system_commands
 from hallfix.cli.commands import tool as tool_commands
+from hallfix.cli.commands import update as update_commands
 from hallfix.cli.context import CliContext
 from hallfix.config.manager import ConfigurationManager
 from hallfix.domain.exceptions import ConfigurationError
@@ -44,6 +45,7 @@ app.add_typer(history_commands.app, name="history")
 app.add_typer(profile_commands.app, name="profile")
 app.add_typer(doctor_commands.app, name="doctor")
 app.add_typer(network_commands.app, name="network")
+app.add_typer(update_commands.app, name="update")
 app.command("repair")(fix_commands.repair)
 app.command("fix")(fix_commands.fix)
 app.command("rollback")(rollback_commands.rollback)

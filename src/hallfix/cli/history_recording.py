@@ -13,6 +13,7 @@ from hallfix.domain.planning.action import (
     RemovePackageAction,
     RepairPackageManagerAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan
 from hallfix.domain.planning.execution_result import PlanExecutionResult
@@ -22,7 +23,7 @@ def _action_detail(action: Action) -> tuple[str | None, str | None, str | None]:
     """Returns (tool_id, package, strategy) — whatever applies to this action type."""
     if isinstance(action, InstallPackageAction | RemovePackageAction):
         return action.tool_id, action.package, action.strategy.value
-    if isinstance(action, UpdatePackageIndexAction):
+    if isinstance(action, UpdatePackageIndexAction | UpgradeSystemAction):
         return None, None, action.strategy.value
     if isinstance(action, RepairPackageManagerAction):
         return None, None, action.manager_kind.value

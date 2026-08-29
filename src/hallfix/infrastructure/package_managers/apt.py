@@ -43,6 +43,23 @@ class AptManager(PackageManagerBase):
             command=result,
         )
 
+    def upgrade(self, *, dry_run: bool = False) -> PackageManagerOperationResult:
+        if not dry_run and self.check_lock().locked:
+            return self._locked_result(dry_run=dry_run)
+        result = self._run(
+            ("apt-get", "upgrade", "-y"),
+            requires_root=True,
+            env=_NONINTERACTIVE_ENV,
+            timeout_seconds=600.0,
+            dry_run=dry_run,
+        )
+        return PackageManagerOperationResult(
+            succeeded=result.succeeded,
+            message="APT packages upgraded." if result.succeeded else result.stderr,
+            dry_run=dry_run,
+            command=result,
+        )
+
     def install(self, package: str, *, dry_run: bool = False) -> PackageOperationResult:
         if not dry_run and self.check_lock().locked:
             return self._locked_package_result(package, "install", dry_run=dry_run)

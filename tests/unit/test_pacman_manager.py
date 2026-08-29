@@ -70,6 +70,13 @@ def test_search_parses_repo_name_version_and_description(tmp_path: Path) -> None
     assert results[0].description == "the fast distributed version control system"
 
 
+def test_upgrade_runs_full_sync_and_upgrade(tmp_path: Path) -> None:
+    runner = FakeCommandRunner()
+    runner.stub(("pacman", "-Syu", "--noconfirm"), ok_result(("pacman", "-Syu", "--noconfirm"), ""))
+    result = _manager(runner, tmp_path).upgrade()
+    assert result.succeeded
+
+
 def test_repair_forces_full_resync(tmp_path: Path) -> None:
     runner = FakeCommandRunner()
     runner.stub(("pacman", "-Syy", "--noconfirm"), ok_result(("pacman", "-Syy", "--noconfirm"), ""))

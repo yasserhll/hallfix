@@ -125,6 +125,34 @@ def test_search_parses_name_and_description(tmp_path: Path) -> None:
     assert results[1].name == "git-lfs"
 
 
+def test_upgrade_success(tmp_path: Path) -> None:
+    runner = FakeCommandRunner()
+    runner.stub(
+        ("apt-get", "upgrade", "-y"),
+        ok_result(("apt-get", "upgrade", "-y"), "0 upgraded, 0 newly installed"),
+    )
+    result = _manager(runner, tmp_path).upgrade()
+    assert result.succeeded
+
+
+def test_upgrade_skipped_when_lock_held(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    runner = FakeCommandRunner()  # unstubbed: upgrade must never be attempted
+    manager = _manager(runner, tmp_path)
+    monkeypatch.setattr(manager, "check_lock", lambda: LockStatus(locked=True, lock_path="/x"))
+    result = manager.upgrade()
+    assert not result.succeeded
+    assert "busy" in result.message
+    assert runner.calls == []
+
+
+def test_upgrade_dry_run_never_calls_real_runner(tmp_path: Path) -> None:
+    runner = FakeCommandRunner()  # no stubs at all
+    result = _manager(runner, tmp_path).upgrade(dry_run=True)
+    assert result.dry_run is True
+    assert result.succeeded
+    assert runner.calls == []
+
+
 def test_repair_runs_configure_then_fix_broken(tmp_path: Path) -> None:
     runner = FakeCommandRunner()
     runner.stub(("dpkg", "--configure", "-a"), ok_result(("dpkg", "--configure", "-a"), ""))

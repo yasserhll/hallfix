@@ -4,9 +4,10 @@
 forces a full database re-sync (``-Syy``). ``refresh_metadata()`` uses a
 plain sync (``-Sy``) without ``-u`` — this is the documented "partial
 upgrade" pitfall on Arch (installing afterward without a full ``-Syu`` can
-pull in a broken dependency combination). Hallfix never runs ``-u``
-automatically since that's a system upgrade, not metadata refresh; this
-limitation is intentional and documented, not an oversight.
+pull in a broken dependency combination). ``upgrade()`` is the one place
+Hallfix runs ``-u``, and only when the user explicitly asked for a system
+upgrade (spec §54's ``hallfix update system``) via the full, correct
+``-Syu`` — never as a side effect of metadata refresh or install.
 """
 
 from __future__ import annotations
@@ -39,6 +40,22 @@ class PacmanManager(PackageManagerBase):
         return PackageManagerOperationResult(
             succeeded=result.succeeded,
             message="Pacman metadata refreshed." if result.succeeded else result.stderr,
+            dry_run=dry_run,
+            command=result,
+        )
+
+    def upgrade(self, *, dry_run: bool = False) -> PackageManagerOperationResult:
+        if not dry_run and self.check_lock().locked:
+            return self._locked_result(dry_run=dry_run)
+        result = self._run(
+            ("pacman", "-Syu", "--noconfirm"),
+            requires_root=True,
+            timeout_seconds=600.0,
+            dry_run=dry_run,
+        )
+        return PackageManagerOperationResult(
+            succeeded=result.succeeded,
+            message="Pacman full system upgrade completed." if result.succeeded else result.stderr,
             dry_run=dry_run,
             command=result,
         )

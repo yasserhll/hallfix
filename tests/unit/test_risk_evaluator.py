@@ -8,6 +8,7 @@ from hallfix.domain.planning.action import (
     RemovePackageAction,
     RepairPackageManagerAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 from hallfix.domain.planning.risk_evaluator import RiskEvaluator
 
@@ -61,5 +62,15 @@ def test_repair_package_manager_uses_fix_declared_risk_level() -> None:
     assert risk.risk_level == RiskLevel.LOW
     assert risk.requires_root is True
     assert risk.requires_network is False
+    assert risk.reversible is False
+    assert risk.rollback_strategy is None
+
+
+def test_upgrade_system_is_medium_risk_and_not_reversible() -> None:
+    action = UpgradeSystemAction(strategy=InstallationStrategy.APT)
+    risk = evaluator.evaluate(action)
+    assert risk.risk_level == RiskLevel.MEDIUM
+    assert risk.requires_root is True
+    assert risk.requires_network is True
     assert risk.reversible is False
     assert risk.rollback_strategy is None

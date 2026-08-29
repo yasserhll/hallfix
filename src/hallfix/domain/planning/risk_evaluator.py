@@ -17,6 +17,7 @@ from hallfix.domain.planning.action import (
     RemovePackageAction,
     RepairPackageManagerAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 
 
@@ -56,6 +57,18 @@ class RiskEvaluator:
                 risk_level=action.fix_risk_level,
                 requires_root=True,
                 requires_network=False,
+                reversible=False,
+                rollback_strategy=None,
+            )
+        if isinstance(action, UpgradeSystemAction):
+            # MEDIUM, not LOW: unlike a single tool install, this can touch
+            # every package on the system at once. Not claimed reversible —
+            # Hallfix doesn't record prior package versions to restore them
+            # (spec §11: never claim rollback is available when it is not).
+            return ActionRisk(
+                risk_level=RiskLevel.MEDIUM,
+                requires_root=True,
+                requires_network=True,
                 reversible=False,
                 rollback_strategy=None,
             )

@@ -31,6 +31,7 @@ from hallfix.domain.planning.action import (
     RemovePackageAction,
     RepairPackageManagerAction,
     UpdatePackageIndexAction,
+    UpgradeSystemAction,
 )
 from hallfix.domain.planning.execution_plan import ExecutionPlan
 from hallfix.domain.planning.execution_result import ActionExecutionResult, PlanExecutionResult
@@ -94,11 +95,17 @@ class Executor:
             return self._execute_refresh(action, dry_run=dry_run)
         if isinstance(action, RepairPackageManagerAction):
             return self._execute_repair(action, dry_run=dry_run)
+        if isinstance(action, UpgradeSystemAction):
+            return self._execute_upgrade(action, dry_run=dry_run)
         msg = f"Executor: no rule for action type {type(action).__name__}"  # pragma: no cover
         raise NotImplementedError(msg)  # pragma: no cover
 
     def _manager_for(
-        self, action: InstallPackageAction | RemovePackageAction | UpdatePackageIndexAction
+        self,
+        action: InstallPackageAction
+        | RemovePackageAction
+        | UpdatePackageIndexAction
+        | UpgradeSystemAction,
     ) -> PackageManager:
         return self._manager_for_kind(_MANAGER_KIND_FOR_STRATEGY[action.strategy])
 
@@ -161,6 +168,19 @@ class Executor:
     ) -> ActionExecutionResult:
         manager = self._manager_for_kind(action.manager_kind)
         result = manager.repair(dry_run=dry_run)
+        return ActionExecutionResult(
+            action=action,
+            succeeded=result.succeeded,
+            already_satisfied=False,
+            message=result.message,
+            dry_run=result.dry_run,
+        )
+
+    def _execute_upgrade(
+        self, action: UpgradeSystemAction, *, dry_run: bool
+    ) -> ActionExecutionResult:
+        manager = self._manager_for(action)
+        result = manager.upgrade(dry_run=dry_run)
         return ActionExecutionResult(
             action=action,
             succeeded=result.succeeded,

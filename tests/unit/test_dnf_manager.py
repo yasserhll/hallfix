@@ -63,6 +63,13 @@ def test_search_parses_name_dot_arch_colon_description(tmp_path: Path) -> None:
     assert results[0].description == "Fast Version Control System"
 
 
+def test_upgrade_success(tmp_path: Path) -> None:
+    runner = FakeCommandRunner()
+    runner.stub(("dnf", "upgrade", "-y"), ok_result(("dnf", "upgrade", "-y"), "Nothing to do."))
+    result = _manager(runner, tmp_path).upgrade()
+    assert result.succeeded
+
+
 def test_repair_cleans_and_rebuilds_cache(tmp_path: Path) -> None:
     runner = FakeCommandRunner()
     runner.stub(("dnf", "clean", "all"), ok_result(("dnf", "clean", "all"), ""))
