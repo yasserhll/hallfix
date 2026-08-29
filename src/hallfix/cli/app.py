@@ -13,9 +13,11 @@ import typer
 from rich.console import Console
 
 from hallfix import __version__
+from hallfix.cli.commands import config as config_commands
 from hallfix.cli.commands import doctor as doctor_commands
 from hallfix.cli.commands import fix as fix_commands
 from hallfix.cli.commands import history as history_commands
+from hallfix.cli.commands import logs as logs_commands
 from hallfix.cli.commands import network as network_commands
 from hallfix.cli.commands import plan as plan_commands
 from hallfix.cli.commands import profile as profile_commands
@@ -46,6 +48,8 @@ app.command("fix")(fix_commands.fix)
 app.command("rollback")(rollback_commands.rollback)
 app.command("report")(report_commands.report)
 app.command("recommend")(recommend_commands.recommend)
+app.command("config")(config_commands.config)
+app.command("logs")(logs_commands.logs)
 
 
 @app.callback()
